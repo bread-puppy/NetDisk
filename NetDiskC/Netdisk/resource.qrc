@@ -1,0 +1,19 @@
+﻿<RCC>
+    <qresource prefix="/">
+        <file alias="NetDisk/ui_assets/face/btn_avatar_a28.png">ui_assets/face/btn_avatar_a28.png</file>
+        <file alias="NetDisk/ui_assets/images/addFile.png">ui_assets/images/addFile.png</file>
+        <file alias="NetDisk/ui_assets/images/Cancel_32x32.png">ui_assets/images/Cancel_32x32.png</file>
+        <file alias="NetDisk/ui_assets/images/check.png">ui_assets/images/check.png</file>
+        <file alias="NetDisk/ui_assets/images/CheckBox_32x32.png">ui_assets/images/CheckBox_32x32.png</file>
+        <file alias="NetDisk/ui_assets/images/delete.png">ui_assets/images/delete.png</file>
+        <file alias="NetDisk/ui_assets/images/file.png">ui_assets/images/file.png</file>
+        <file alias="NetDisk/ui_assets/images/folder.png">ui_assets/images/folder.png</file>
+        <file alias="NetDisk/ui_assets/images/logo.ico">ui_assets/images/logo.ico</file>
+        <file alias="NetDisk/ui_assets/images/pause.png">ui_assets/images/pause.png</file>
+        <file alias="NetDisk/ui_assets/images/play.png">ui_assets/images/play.png</file>
+        <file alias="NetDisk/ui_assets/images/search.png">ui_assets/images/search.png</file>
+        <file alias="NetDisk/ui_assets/images/share.png">ui_assets/images/share.png</file>
+        <file alias="NetDisk/ui_assets/images/transmit.ico">ui_assets/images/transmit.ico</file>
+        <file alias="NetDisk/ui_assets/tb/baidu.png">ui_assets/tb/baidu.png</file>
+    </qresource>
+</RCC>
