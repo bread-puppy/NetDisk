@@ -1,0 +1,28 @@
+# Qt / C++ build files 
+build*/ 
+debug/ 
+release/ 
+*.o 
+*.obj 
+*.exe 
+*.dll 
+*.a 
+*.so 
+*.pro.user* 
+Makefile 
+*.user 
+ 
+# Runtime files 
+*.log 
+*.db 
+*.sqlite 
+*.tmp 
+ 
+# Local configuration 
+.claude/ 
+.vscode/ 
+.idea/ 
+ 
+# OS files 
+Thumbs.db 
+.DS_Store 
