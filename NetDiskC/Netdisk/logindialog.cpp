@@ -12,7 +12,8 @@ LoginDialog::LoginDialog(QWidget *parent) :
     setWindowTitle("登录&注册");  //设置标题栏
     ui->tw_page->setCurrentIndex(1);  //窗口默认注册，0是登录
     //去掉按钮的焦点框：点击后按钮会一直带着一圈颜色边框，
-    //只有按住时才有按压效果、松开后不留任何边框    const QList<QPushButton*> btns = this->findChildren<QPushButton*>();
+    //只有按住时才有按压效果、松开后不留任何边框
+    const QList<QPushButton*> btns = this->findChildren<QPushButton*>();
     for (QPushButton* b : btns)
         b->setFocusPolicy(Qt::NoFocus);
 }

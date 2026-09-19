@@ -37,7 +37,18 @@ bool TcpClientMediator::SendData( unsigned int lSendIP , char* buf , int nlen )
         return m_pNet->SendData( 0 , buf, nlen);
     else
     {
-//m_pNet->UnInitNet();//delete m_pNet;//m_pNet = new TcpClient(this);//if( this->OpenNet( m_szBufIP , m_port ) )//{//return m_pNet->SendData( 0,buf,nlen);//}//else//{//return -1;//}         return false;
+//m_pNet->UnInitNet();
+//delete m_pNet;
+//m_pNet = new TcpClient(this);
+//if( this->OpenNet( m_szBufIP , m_port ) )
+//{
+//return m_pNet->SendData( 0,buf,nlen);
+//}
+//else
+//{
+//return -1;
+//}
+         return false;
     }
 }
 #include<iostream>

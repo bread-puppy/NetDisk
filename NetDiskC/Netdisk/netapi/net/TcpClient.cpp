@@ -63,10 +63,16 @@ bool TcpClient::InitNet(const char *szBufIP, unsigned short port)
     }
 
     //设置客户端发送缓冲区
-    //int nSendBuf=64*1024;//设置为64K    //setsockopt(m_sock,SOL_SOCKET,SO_SNDBUF,(const char*)&nSendBuf,sizeof(int));    //设置客户端接收缓冲区
-    //int nRecvBuf=64*1024;//设置为64K    //setsockopt(m_sock,SOL_SOCKET,SO_RCVBUF,(const char*)&nRecvBuf,sizeof(int));
-//DWORD nNetTimeout= 300;//1秒 - 1000
-//setsockopt(m_sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&nNetTimeout, sizeof(DWORD));
+    //int nSendBuf=64*1024;//设置为64K
+    //setsockopt(m_sock,SOL_SOCKET,SO_SNDBUF,(const char*)&nSendBuf,sizeof(int));
+    //设置客户端接收缓冲区
+    //int nRecvBuf=64*1024;//设置为64K
+    //setsockopt(m_sock,SOL_SOCKET,SO_RCVBUF,(const char*)&nRecvBuf,sizeof(int));
+
+//DWORD nNetTimeout= 300;//1秒 - 1000
+
+//setsockopt(m_sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&nNetTimeout, sizeof(DWORD));
+
     //禁用 TCP-NODELAY（即启用 Nagle 算法的反面——立即发送）
     int value = 1;
     setsockopt(m_sock, IPPROTO_TCP, TCP_NODELAY, (char *)&value, sizeof(int));
@@ -75,7 +81,8 @@ bool TcpClient::InitNet(const char *szBufIP, unsigned short port)
     setsockopt(m_sock, SOL_SOCKET, SO_KEEPALIVE, (char *)&value, sizeof(int));
 
     m_isConnected = true;
-    //收数据 -- 创建线程 CreateThread  WinAPI  strcpy  C/C++ RunTime 库函数 创建内存块    m_hThreadHandle = (HANDLE)_beginthreadex(  NULL, 0 ,&RecvThread ,this , 0 , NULL );     //( CreateThread 创建内存块 )
+    //收数据 -- 创建线程 CreateThread  WinAPI  strcpy  C/C++ RunTime 库函数 创建内存块
+    m_hThreadHandle = (HANDLE)_beginthreadex(  NULL, 0 ,&RecvThread ,this , 0 , NULL );     //( CreateThread 创建内存块 )
     //_endthreadex(); -- 回收内存块      //( ExitThread 不回收内存块 ) --内存泄露
 
     return true;

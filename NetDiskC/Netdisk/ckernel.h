@@ -19,7 +19,8 @@ class QTimer;
 
 //#define USE_SERVER 1
 
-//连接池配置#define CHUNK_THRESHOLD     (100 * 1024 * 1024)  // 100MB 以上启用分片传输
+//连接池配置
+#define CHUNK_THRESHOLD     (100 * 1024 * 1024)  // 100MB 以上启用分片传输
 #define POOL_CONNECTIONS    4   // 并行连接数
 
 //协议映射表
@@ -79,7 +80,8 @@ private slots:
     void slot_browseShare(int shareLink, QString subDir, QString password);
     void slot_downloadShareFile(int shareLink, int fileid, QString password);
 
-    //已获取分享SQLite管理    void slot_saveObtainedShare(int shareCode, QString password, QString rootName);
+    //已获取分享SQLite管理
+    void slot_saveObtainedShare(int shareCode, QString password, QString rootName);
     void slot_loadObtainedShares();
     void slot_clearUploadTasks();  // 清空上传/下载任务表
 
@@ -153,9 +155,11 @@ private:
     void SendData(char* buf,int len);
 private:
     void InitDatabase(int id);
-    //连接池初始化（登录后调用）    void initTcpClientPool();
+    //连接池初始化（登录后调用）
+    void initTcpClientPool();
     void bindPoolConnection(int connIndex);
-    //分片上传/下载辅助方法    void slot_uploadFileChunked(FileInfo& info);
+    //分片上传/下载辅助方法
+    void slot_uploadFileChunked(FileInfo& info);
     void slot_downloadFileChunked(int fileid, QString dir);
     void slot_writeUploadTask(FileInfo &info);
     void slot_writeDownloadTask(FileInfo &info);
@@ -163,7 +167,7 @@ private:
     void slot_deleteDownloadTask(FileInfo &info);
     void slot_getUploadTask(QList<FileInfo> &infoList);
     void slot_getDownloadTask(QList<FileInfo> &infoList);
-    //四路分片进度持久化：程序重启后可从每段已发送位置继续    int loadChunkProgress(int timestamp, int segIndex);
+    int loadChunkProgress(int timestamp, int segIndex);
     void saveChunkProgress(int timestamp, int segIndex, int segOffset, int segSize, int sent);
     void clearChunkProgress(int timestamp);
 };

@@ -1,4 +1,4 @@
-﻿#include "tcpclientpool.h"
+#include "tcpclientpool.h"
 #include <QDebug>
 
 TcpClientPool::TcpClientPool(int count, QObject *parent)

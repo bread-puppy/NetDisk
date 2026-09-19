@@ -69,7 +69,8 @@ bool TcpServer::InitNet(const char *szBufIP, unsigned short port)
 
     //5. 创建接收连接线程 -- 等待客户端连接
 
-    //收数据 -- 创建线程 CreateThread  WinAPI  strcpy  C/C++ RunTime 库函数 创建内存块    HANDLE hThreadHandle = (HANDLE)_beginthreadex(  NULL, 0 ,&AcceptThread ,this , 0 , NULL );     //( CreateThread 创建内存块 )
+    //收数据 -- 创建线程 CreateThread  WinAPI  strcpy  C/C++ RunTime 库函数 创建内存块
+    HANDLE hThreadHandle = (HANDLE)_beginthreadex(  NULL, 0 ,&AcceptThread ,this , 0 , NULL );     //( CreateThread 创建内存块 )
     //_endthreadex(); -- 回收内存块      //( ExitThread 不回收内存块 ) --内存泄露
     if( hThreadHandle )
     {
@@ -152,7 +153,8 @@ bool TcpServer::SendData(unsigned int lSendIP , char* szbuf , int nlen )
     if( !szbuf|| nlen <= 0 ) return false;
 
     //防止粘包  策略: 先发包大小 再发数据包
-    //m_sock  <--> lSendIP/*
+    //m_sock  <--> lSendIP
+/*
     send( lSendIP , (char*)&nlen , sizeof(int) , 0  );
 
     if( send( lSendIP , buf , nlen , 0  ) <= 0 )
@@ -164,7 +166,8 @@ bool TcpServer::SendData(unsigned int lSendIP , char* szbuf , int nlen )
     std::vector<char> vecbuf;
     vecbuf.resize( DataLen );
 
- //char* buf = new char[ DataLen ];    char* buf = &*vecbuf.begin();
+ //char* buf = new char[ DataLen ];
+    char* buf = &*vecbuf.begin();
     char* tmp = buf;
     *(int*) tmp = nlen;
     tmp+= sizeof(int);
@@ -172,7 +175,8 @@ bool TcpServer::SendData(unsigned int lSendIP , char* szbuf , int nlen )
     memcpy( tmp , szbuf , nlen);
 
     int res = send( lSendIP ,buf,DataLen , 0);
-//delete[] buf;    return res;
+//delete[] buf;
+    return res;
 
 }
 //接收

@@ -12,7 +12,8 @@ PlayerDialog::PlayerDialog(QWidget *parent)
     m_currentPath="";  //初始没有播放文件
 
     //去掉按钮的焦点框：点击后按钮会一直带着一圈颜色边框，
-    //只有按住时才有按压效果、松开后不留任何边框    const QList<QPushButton*> btns = this->findChildren<QPushButton*>();
+    //只有按住时才有按压效果、松开后不留任何边框
+    const QList<QPushButton*> btns = this->findChildren<QPushButton*>();
     for (QPushButton* b : btns)
         b->setFocusPolicy(Qt::NoFocus);
 
@@ -66,18 +67,22 @@ void PlayerDialog::on_pb_start_clicked()
     //状态切换
     slot_PlayerStateChanged(PlayerState::Playing);
 }
-//由外部直接指定路径播放（不弹文件选择框）void PlayerDialog::on_pb_start_clicked_with_path(QString path)
+//由外部直接指定路径播放（不弹文件选择框）
+void PlayerDialog::on_pb_start_clicked_with_path(QString path)
 {
     if(path.isEmpty()) return;
-    //先停止当前播放    if(m_player->playerstate()!=PlayerState::Stop){
+    //先停止当前播放
+    if(m_player->playerstate()!=PlayerState::Stop){
         m_player->stop(true);
         //清掉上一个视频残留的最后一帧并复位进度条，
         slot_PlayerStateChanged(PlayerState::Stop);
     }
     m_currentPath=path;  //记录当前播放路径，播完再点"播放"时从头重播
-    //设置文件名并启动    m_player->setFileName(path);
+    //设置文件名并启动
+    m_player->setFileName(path);
     m_player->start();
-    //更新界面状态    slot_PlayerStateChanged(PlayerState::Playing);
+    //更新界面状态
+    slot_PlayerStateChanged(PlayerState::Playing);
 }
 
 void PlayerDialog::slot_setImage(QImage img)
@@ -101,7 +106,9 @@ void PlayerDialog::on_pb_resume_clicked()
 }
 
 //Stop状态从头播放
-//自然播完时Stop信号先于播放线程退出发出，线程还没完全结束时QThread::start会失败，//所以先判断isRunning，还在运行就延迟200毫秒重试。void PlayerDialog::startPlayCurrent()
+//自然播完时Stop信号先于播放线程退出发出，线程还没完全结束时QThread::start会失败，
+//所以先判断isRunning，还在运行就延迟200毫秒重试。
+void PlayerDialog::startPlayCurrent()
 {
     if(m_currentPath.isEmpty()) return;
     if(m_player->playerstate()!=PlayerState::Stop) return;
@@ -126,7 +133,8 @@ void PlayerDialog::on_pb_pause_clicked()
 
 
 //【点×停止】关闭播放窗口即停止播放：点×、按Esc都会走reject()，
-//stop(true)等待播放线程退出。析构函数里的stop(true)作为兜底保留。void PlayerDialog::reject()
+//stop(true)等待播放线程退出。析构函数里的stop(true)作为兜底保留。
+void PlayerDialog::reject()
 {
     m_player->stop(true);
     QDialog::reject();
@@ -137,7 +145,9 @@ void PlayerDialog ::slot_PlayerStateChanged(int state)
     {
     case PlayerState::Stop:
         //旧播放线程退出时发出的 Stop 信号是排队投递的，
-        //清成黑屏、进度条停走、按钮状态错乱。检查播放器真实状态：        //已经在播新视频就忽略这条过期信号。        if (m_player && m_player->playerstate() == PlayerState::Playing)
+        //清成黑屏、进度条停走、按钮状态错乱。检查播放器真实状态：
+        //已经在播新视频就忽略这条过期信号。
+        if (m_player && m_player->playerstate() == PlayerState::Playing)
             break;
         qDebug()<< "VideoPlayer::Stop";
         m_timer.stop();
@@ -168,7 +178,8 @@ void PlayerDialog ::slot_PlayerStateChanged(int state)
 void PlayerDialog::slot_getTotalTime(qint64 uSec)
 {
     //总时长未知(<=0)时把进度条范围置 0 并禁用：
-    //原代码 setRange(0,-1) 会让进度条完全不可用    if (uSec <= 0) {
+    //原代码 setRange(0,-1) 会让进度条完全不可用
+    if (uSec <= 0) {
         ui->slider_progress->setRange(0, 0);
         ui->slider_progress->setEnabled(false);
         ui->lb_totalTime->setText("00:00:00");
@@ -200,12 +211,14 @@ void PlayerDialog::slot_TimerTimeOut()
         if(ui->slider_progress->value() == ui->slider_progress->maximum()
                 && m_player->playerstate() == PlayerState::Stop)
         {
-//slot_PlayerStateChanged( PlayerState::Stop );            m_player->stop(true);
+//slot_PlayerStateChanged( PlayerState::Stop );
+            m_player->stop(true);
         }else if(ui->slider_progress->value() + 1  ==
                  ui->slider_progress->maximum()
                  && m_player->playerstate() == PlayerState::Stop)
         {
-//slot_PlayerStateChanged( PlayerState::Stop );            m_player->stop(true);
+//slot_PlayerStateChanged( PlayerState::Stop );
+            m_player->stop(true);
         }
     }
 }
@@ -230,6 +243,7 @@ bool PlayerDialog::eventFilter(QObject *obj, QEvent *event)
                 return false;
             }
         } else {
-            //将事件继续传递给父类            return QDialog::eventFilter(obj, event);
+            //将事件继续传递给父类
+            return QDialog::eventFilter(obj, event);
     }
 }

@@ -5,7 +5,8 @@
 #include <cstdio>
 
 #define _MAX_PATH_SIZE      (260)
-//故改回 4096，保证双方协议结构体字节布局一致。#define _DEF_BUFFER         (4096)
+//故改回 4096，保证双方协议结构体字节布局一致。
+#define _DEF_BUFFER         (4096)
 #define _DEF_CONTENT_SIZE	(4096)
 #define _MAX_SIZE           (40)
 #define _DEF_SHARE_PWD_LEN  20
@@ -82,7 +83,8 @@ typedef struct STRU_LOGIN_RQ
 
 typedef struct STRU_LOGIN_RS
 {
-	//需要 结果 , 用户的id	STRU_LOGIN_RS(): type(_DEF_PACK_LOGIN_RS) , result(login_success),userid(0)
+	//需要 结果 , 用户的id
+	STRU_LOGIN_RS(): type(_DEF_PACK_LOGIN_RS) , result(login_success),userid(0)
 	{
         memset(name,0,sizeof(name));
 	}
@@ -381,7 +383,9 @@ struct STRU_QUICK_UPLOAD_RS{
 #define _DEF_PACK_SHARE_FILE_RS       (_DEF_PACK_BASE + 19 )
 
 //分享文件请求 : 包含 谁 分享 什么目录下面的 哪些文件( 文件id 数组 )  分享时间
-//删除 password 字段：服务端的 STRU_SHARE_FILE_RQ 没有该字段，//会把密码内容当成文件个数，分享功能报错。现与服务端结构保持严格一致。struct STRU_SHARE_FILE_RQ
+//删除 password 字段：服务端的 STRU_SHARE_FILE_RQ 没有该字段，
+//会把密码内容当成文件个数，分享功能报错。现与服务端结构保持严格一致。
+struct STRU_SHARE_FILE_RQ
 {
     void init(){
         type = _DEF_PACK_SHARE_FILE_RQ;
@@ -398,7 +402,9 @@ struct STRU_QUICK_UPLOAD_RS{
     int fileidArray[];
 };
 
-//收到回复 就刷新分享列表//删除 password 字段，与服务端结构对齐struct STRU_SHARE_FILE_RS
+//收到回复 就刷新分享列表
+//删除 password 字段，与服务端结构对齐
+struct STRU_SHARE_FILE_RS
 {
     STRU_SHARE_FILE_RS(): type( _DEF_PACK_SHARE_FILE_RS ),result(0){
     }
@@ -419,10 +425,13 @@ struct STRU_MY_SHARE_RQ
     }
     PackType type;
     int userid;
-    //考虑加入时间 获取指定时间范围的分享};
+    //考虑加入时间 获取指定时间范围的分享
+};
 
 //分享文件信息: 名字 大小 分享时间 链接
-//删除 password 字段：服务端的 STRU_MY_SHARE_FILE 没有该字段，//现与服务端结构保持严格一致。struct STRU_MY_SHARE_FILE
+//删除 password 字段：服务端的 STRU_MY_SHARE_FILE 没有该字段，
+//现与服务端结构保持严格一致。
+struct STRU_MY_SHARE_FILE
 {
     char name[_MAX_PATH_SIZE];
     int size;
@@ -453,7 +462,9 @@ struct STRU_MY_SHARE_RS
 #define get_share_link_invalid  2
 
 //获取分享
-//删除末尾的 password 字段，与服务端 STRU_GET_SHARE_RQ 结构严格对齐//（服务端不校验密码，该字段只影响双方结构体大小一致性）struct STRU_GET_SHARE_RQ
+//删除末尾的 password 字段，与服务端 STRU_GET_SHARE_RQ 结构严格对齐
+//（服务端不校验密码，该字段只影响双方结构体大小一致性）
+struct STRU_GET_SHARE_RQ
 {
     STRU_GET_SHARE_RQ():type(_DEF_PACK_GET_SHARE_RQ)
       ,userid(0), shareLink(0){
@@ -519,8 +530,10 @@ struct STRU_DELETE_FILE_RS
 /////////////////下载续传协议 //////////////
 //请求
 #define _DEF_PACK_CONTINUE_DOWNLOAD_RQ     (_DEF_PACK_BASE + 27)
-//告诉服务器 从哪里开始传数据块 就可以直接传了  不需要等待收到回复
-//服务器中 map 有和没有  有 timestamp  没有 需要唯一确认文件 uid fid fdir//【MD5校验】新增 md5 字段：客户端本地已下载部分的MD5，服务端据此做续传一致性校验
+//告诉服务器 从哪里开始传数据块 就可以直接传了  不需要等待收到回复
+
+//服务器中 map 有和没有  有 timestamp  没有 需要唯一确认文件 uid fid fdir
+//【MD5校验】新增 md5 字段：客户端本地已下载部分的MD5，服务端据此做续传一致性校验
 struct STRU_CONTINUE_DOWNLOAD_RQ
 {
     STRU_CONTINUE_DOWNLOAD_RQ():type(_DEF_PACK_CONTINUE_DOWNLOAD_RQ){
@@ -600,7 +613,8 @@ struct STRU_CONTINUE_UPLOAD_RS
 };
 
 ///////////// 连接池绑定 //////////////////
-//超大文件分片并行传输：将额外连接与用户会话绑定#define _DEF_PACK_BIND_POOL_RQ      (_DEF_PACK_BASE + 30)
+//超大文件分片并行传输：将额外连接与用户会话绑定
+#define _DEF_PACK_BIND_POOL_RQ      (_DEF_PACK_BASE + 30)
 #define _DEF_PACK_BIND_POOL_RS      (_DEF_PACK_BASE + 31)
 
 struct STRU_BIND_POOL_RQ
@@ -619,7 +633,8 @@ struct STRU_BIND_POOL_RS
 };
 
 ///////////// 分片上传 //////////////////
-//超大文件（>100MB）拆分到多条池连接并行上传#define _DEF_PACK_CHUNK_UPLOAD_RQ    (_DEF_PACK_BASE + 32)
+//超大文件（>100MB）拆分到多条池连接并行上传
+#define _DEF_PACK_CHUNK_UPLOAD_RQ    (_DEF_PACK_BASE + 32)
 #define _DEF_PACK_CHUNK_UPLOAD_RS    (_DEF_PACK_BASE + 33)
 
 struct STRU_CHUNK_UPLOAD_RQ
@@ -659,7 +674,8 @@ struct STRU_CHUNK_UPLOAD_RS
     int result;
 };
 
-//分片下载请求（每条池连接独立请求其分段）#define _DEF_PACK_CHUNK_DOWNLOAD_RQ  (_DEF_PACK_BASE + 34)
+//分片下载请求（每条池连接独立请求其分段）
+#define _DEF_PACK_CHUNK_DOWNLOAD_RQ  (_DEF_PACK_BASE + 34)
 #define _DEF_PACK_CHUNK_DOWNLOAD_RS  (_DEF_PACK_BASE + 35)
 
 struct STRU_CHUNK_DOWNLOAD_RQ
@@ -692,7 +708,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
     char content[_DEF_BUFFER];
 };
 
-//心跳协议  #define _DEF_PACK_HEARTBEAT_RQ      (_DEF_PACK_BASE + 36)
+//心跳协议
+  #define _DEF_PACK_HEARTBEAT_RQ      (_DEF_PACK_BASE + 36)
   #define _DEF_PACK_HEARTBEAT_RS      (_DEF_PACK_BASE + 37)
 
   struct STRU_HEARTBEAT_RQ
@@ -709,7 +726,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
       int seq;
   };
 
-  //MD5校验协议  #define _DEF_PACK_MD5_CHECK_RQ     (_DEF_PACK_BASE + 38)
+  //MD5校验协议
+  #define _DEF_PACK_MD5_CHECK_RQ     (_DEF_PACK_BASE + 38)
   #define _DEF_PACK_MD5_CHECK_RS     (_DEF_PACK_BASE + 39)
 
   struct STRU_MD5_CHECK_RQ
@@ -728,7 +746,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
       int match;  // 1=一致, 0=不一致
   };
 
-  //文件搜索协议  #define _DEF_PACK_SEARCH_FILE_RQ    (_DEF_PACK_BASE + 40)
+  //文件搜索协议
+  #define _DEF_PACK_SEARCH_FILE_RQ    (_DEF_PACK_BASE + 40)
   #define _DEF_PACK_SEARCH_FILE_RS    (_DEF_PACK_BASE + 41)
 
   struct STRU_SEARCH_FILE_RQ
@@ -762,7 +781,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
       STRU_SEARCH_RESULT_ITEM items[];
   };
 
-  //手机验证码协议  #define _DEF_PACK_SEND_VERIFY_CODE_RQ   (_DEF_PACK_BASE + 42)
+  //手机验证码协议
+  #define _DEF_PACK_SEND_VERIFY_CODE_RQ   (_DEF_PACK_BASE + 42)
   #define _DEF_PACK_SEND_VERIFY_CODE_RS   (_DEF_PACK_BASE + 43)
 
   struct STRU_SEND_VERIFY_CODE_RQ
@@ -784,16 +804,21 @@ struct STRU_CHUNK_DOWNLOAD_RS
       char code[8];
   };
 
-  //传输控制协议（暂停/恢复/取消）  #define _DEF_PACK_TRANSFER_CTRL_RQ     (_DEF_PACK_BASE + 44)
+  //传输控制协议（暂停/恢复/取消）
+  #define _DEF_PACK_TRANSFER_CTRL_RQ     (_DEF_PACK_BASE + 44)
   #define _DEF_PACK_TRANSFER_CTRL_RS     (_DEF_PACK_BASE + 45)
 
-  //========== 收藏文件协议 ==========  //添加/取消收藏请求  #define _DEF_PACK_FAVORITE_FILE_RQ    (_DEF_PACK_BASE + 46)
-  //添加/取消收藏回复  #define _DEF_PACK_FAVORITE_FILE_RS    (_DEF_PACK_BASE + 47)
+  //========== 收藏文件协议 ==========
+  //添加/取消收藏请求
+  #define _DEF_PACK_FAVORITE_FILE_RQ    (_DEF_PACK_BASE + 46)
+  //添加/取消收藏回复
+  #define _DEF_PACK_FAVORITE_FILE_RS    (_DEF_PACK_BASE + 47)
 
   #define FAVORITE_ADD    1   // 添加收藏
   #define FAVORITE_REMOVE 0   // 取消收藏
 
-  //收藏文件请求  struct STRU_FAVORITE_FILE_RQ
+  //收藏文件请求
+  struct STRU_FAVORITE_FILE_RQ
   {
       void init()
       {
@@ -811,24 +836,29 @@ struct STRU_CHUNK_DOWNLOAD_RS
       int fileidArray[];
   };
 
-  //收藏文件回复  struct STRU_FAVORITE_FILE_RS
+  //收藏文件回复
+  struct STRU_FAVORITE_FILE_RS
   {
       STRU_FAVORITE_FILE_RS():type(_DEF_PACK_FAVORITE_FILE_RS), result(0){}
       PackType type;
       int result;  // 1=成功
   };
 
-  //获取收藏列表请求  #define _DEF_PACK_GET_FAVORITES_RQ    (_DEF_PACK_BASE + 48)
-  //获取收藏列表回复  #define _DEF_PACK_GET_FAVORITES_RS    (_DEF_PACK_BASE + 49)
+  //获取收藏列表请求
+  #define _DEF_PACK_GET_FAVORITES_RQ    (_DEF_PACK_BASE + 48)
+  //获取收藏列表回复
+  #define _DEF_PACK_GET_FAVORITES_RS    (_DEF_PACK_BASE + 49)
 
-  //获取收藏列表请求  struct STRU_GET_FAVORITES_RQ
+  //获取收藏列表请求
+  struct STRU_GET_FAVORITES_RQ
   {
       STRU_GET_FAVORITES_RQ():type(_DEF_PACK_GET_FAVORITES_RQ), userid(0){}
       PackType type;
       int userid;
   };
 
-  //收藏文件信息  struct STRU_FAVORITE_ITEM
+  //收藏文件信息
+  struct STRU_FAVORITE_ITEM
   {
       int fileid;
       char name[_MAX_PATH_SIZE];
@@ -838,7 +868,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
       char fileType[_DEF_TYPE_LEN];
   };
 
-  //获取收藏列表回复  struct STRU_GET_FAVORITES_RS
+  //获取收藏列表回复
+  struct STRU_GET_FAVORITES_RS
   {
       void init() {
           type = _DEF_PACK_GET_FAVORITES_RS;
@@ -849,10 +880,14 @@ struct STRU_CHUNK_DOWNLOAD_RS
       STRU_FAVORITE_ITEM items[];  // 柔性数组
   };
 
-  //========== 回收站协议 ==========  //移入回收站请求  #define _DEF_PACK_RECYCLE_FILE_RQ    (_DEF_PACK_BASE + 50)
-  //移入回收站回复  #define _DEF_PACK_RECYCLE_FILE_RS    (_DEF_PACK_BASE + 51)
+  //========== 回收站协议 ==========
+  //移入回收站请求
+  #define _DEF_PACK_RECYCLE_FILE_RQ    (_DEF_PACK_BASE + 50)
+  //移入回收站回复
+  #define _DEF_PACK_RECYCLE_FILE_RS    (_DEF_PACK_BASE + 51)
 
-  //移入回收站请求  struct STRU_RECYCLE_FILE_RQ
+  //移入回收站请求
+  struct STRU_RECYCLE_FILE_RQ
   {
       void init()
       {
@@ -868,7 +903,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
       int fileidArray[];
   };
 
-  //移入回收站回复  struct STRU_RECYCLE_FILE_RS
+  //移入回收站回复
+  struct STRU_RECYCLE_FILE_RS
   {
       STRU_RECYCLE_FILE_RS():type(_DEF_PACK_RECYCLE_FILE_RS), result(1){
           memset(dir, 0, sizeof(dir));
@@ -878,17 +914,21 @@ struct STRU_CHUNK_DOWNLOAD_RS
       char dir[_MAX_PATH_SIZE];
   };
 
-  //获取回收站列表请求  #define _DEF_PACK_GET_RECYCLE_RQ     (_DEF_PACK_BASE + 52)
-  //获取回收站列表回复  #define _DEF_PACK_GET_RECYCLE_RS     (_DEF_PACK_BASE + 53)
+  //获取回收站列表请求
+  #define _DEF_PACK_GET_RECYCLE_RQ     (_DEF_PACK_BASE + 52)
+  //获取回收站列表回复
+  #define _DEF_PACK_GET_RECYCLE_RS     (_DEF_PACK_BASE + 53)
 
-  //获取回收站列表请求  struct STRU_GET_RECYCLE_RQ
+  //获取回收站列表请求
+  struct STRU_GET_RECYCLE_RQ
   {
       STRU_GET_RECYCLE_RQ():type(_DEF_PACK_GET_RECYCLE_RQ), userid(0){}
       PackType type;
       int userid;
   };
 
-  //回收站文件信息  struct STRU_RECYCLE_ITEM
+  //回收站文件信息
+  struct STRU_RECYCLE_ITEM
   {
       int fileid;
       char name[_MAX_PATH_SIZE];
@@ -898,7 +938,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
       char fileType[_DEF_TYPE_LEN];
   };
 
-  //获取回收站列表回复  struct STRU_GET_RECYCLE_RS
+  //获取回收站列表回复
+  struct STRU_GET_RECYCLE_RS
   {
       void init() {
           type = _DEF_PACK_GET_RECYCLE_RS;
@@ -909,10 +950,13 @@ struct STRU_CHUNK_DOWNLOAD_RS
       STRU_RECYCLE_ITEM items[];  // 柔性数组
   };
 
-  //从回收站恢复请求  #define _DEF_PACK_RESTORE_FILE_RQ    (_DEF_PACK_BASE + 54)
-  //从回收站恢复回复  #define _DEF_PACK_RESTORE_FILE_RS    (_DEF_PACK_BASE + 55)
+  //从回收站恢复请求
+  #define _DEF_PACK_RESTORE_FILE_RQ    (_DEF_PACK_BASE + 54)
+  //从回收站恢复回复
+  #define _DEF_PACK_RESTORE_FILE_RS    (_DEF_PACK_BASE + 55)
 
-  //从回收站恢复请求  struct STRU_RESTORE_FILE_RQ
+  //从回收站恢复请求
+  struct STRU_RESTORE_FILE_RQ
   {
       void init()
       {
@@ -926,7 +970,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
       int fileidArray[];
   };
 
-  //从回收站恢复回复  struct STRU_RESTORE_FILE_RS
+  //从回收站恢复回复
+  struct STRU_RESTORE_FILE_RS
   {
       STRU_RESTORE_FILE_RS():type(_DEF_PACK_RESTORE_FILE_RS), result(0){}
       PackType type;
@@ -958,7 +1003,8 @@ struct STRU_CHUNK_DOWNLOAD_RS
       int pos;
   };
 
-//浏览分享目录（预览用，不复制文件到自己网盘）#define _DEF_PACK_BROWSE_SHARE_RQ   (_DEF_PACK_BASE + 60)
+//浏览分享目录（预览用，不复制文件到自己网盘）
+#define _DEF_PACK_BROWSE_SHARE_RQ   (_DEF_PACK_BASE + 60)
 #define _DEF_PACK_BROWSE_SHARE_RS   (_DEF_PACK_BASE + 61)
 
 #define browse_share_success        0
@@ -994,7 +1040,8 @@ struct STRU_BROWSE_SHARE_RS
     STRU_FILE_INFO items[];            // 复用已有文件信息结构
 };
 
-//下载分享文件（用于预览）#define _DEF_PACK_DOWNLOAD_SHARE_FILE_RQ   (_DEF_PACK_BASE + 62)
+//下载分享文件（用于预览）
+#define _DEF_PACK_DOWNLOAD_SHARE_FILE_RQ   (_DEF_PACK_BASE + 62)
 
 struct STRU_DOWNLOAD_SHARE_FILE_RQ
 {
@@ -1009,7 +1056,9 @@ struct STRU_DOWNLOAD_SHARE_FILE_RQ
     char password[_DEF_SHARE_PWD_LEN];
 };
 
-//========== 回收站彻底删除协议 ==========//现新增专用协议，服务端直接从回收站表删除，解决彻底删除无效的问题。#define _DEF_PACK_DELETE_FOREVER_RQ   (_DEF_PACK_BASE + 64)
+//========== 回收站彻底删除协议 ==========
+//现新增专用协议，服务端直接从回收站表删除，解决彻底删除无效的问题。
+#define _DEF_PACK_DELETE_FOREVER_RQ   (_DEF_PACK_BASE + 64)
 #define _DEF_PACK_DELETE_FOREVER_RS   (_DEF_PACK_BASE + 65)
 
 struct STRU_DELETE_FOREVER_RQ

@@ -1,4 +1,4 @@
-﻿#include<INet.h>
+#include<INet.h>
 
 bool INet::m_isLoadlib = false;
 

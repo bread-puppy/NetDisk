@@ -1,4 +1,4 @@
-﻿#ifndef MYTABLEWIDGETITEM_H
+#ifndef MYTABLEWIDGETITEM_H
 #define MYTABLEWIDGETITEM_H
 #include<QTableWidgetItem>
 #include"common.h"

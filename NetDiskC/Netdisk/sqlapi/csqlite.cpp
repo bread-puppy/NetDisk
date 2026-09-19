@@ -1,4 +1,4 @@
-﻿#include "csqlite.h"
+#include "csqlite.h"
 
 CSqlite::CSqlite()
 {

@@ -1,4 +1,4 @@
-﻿#include"ckernel.h"
+#include"ckernel.h"
 #include <QApplication>
 
 #undef main

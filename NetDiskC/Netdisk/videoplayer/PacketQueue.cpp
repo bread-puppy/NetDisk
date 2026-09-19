@@ -13,7 +13,8 @@ void packet_queue_init(PacketQueue *queue)
 int packet_queue_put(PacketQueue *queue, AVPacket *packet)
 {
     AVPacketList *pkt_list;
-    //包校验    if (av_dup_packet(packet) < 0)
+    //包校验
+    if (av_dup_packet(packet) < 0)
     {
         return -1;
     }

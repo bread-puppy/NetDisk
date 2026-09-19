@@ -1,4 +1,4 @@
-﻿#include"UdpMediator.h"
+#include"UdpMediator.h"
 
 #include"UdpNet.h"
 

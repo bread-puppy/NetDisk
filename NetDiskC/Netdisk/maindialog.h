@@ -103,24 +103,28 @@ private slots:
     bool slot_getDownloadFileInfoByTimestamp(int timestamp,FileInfo& info);
     bool slot_getUploadFileInfoByTimestamp(int timestamp,FileInfo& info);
 
-    //视频播放相关    void slot_onVideoReady(QString localPath);
+    //视频播放相关
+    void slot_onVideoReady(QString localPath);
     bool isVideoFile(const QString& name);
     void playVideoFile(const QString& localPath);
     //校验本地视频能否解出第一帧：
-    //播放前校验，损坏则删除并重新下载    bool checkVideoPlayable(const QString& localPath);
+    //播放前校验，损坏则删除并重新下载
+    bool checkVideoPlayable(const QString& localPath);
 
     void slot_searchFile(bool flag);
     void on_pb_searchBack_clicked();
     void slot_showSearchResults(const char* buf, int nlen);  // 展示搜索结果
 
-    //收藏相关    void slot_favoriteFile(bool flag);
+    //收藏相关
+    void slot_favoriteFile(bool flag);
     void slot_cancelFavorite(bool flag);
     void on_pb_store_clicked();
     void slot_insertFavoriteInfo(int fileid, QString name, QString dir, int size, QString time, QString type);
     void slot_deleteAllFavoriteInfo();
     void slot_showFavorites(const char* buf, int nlen);
 
-    //回收站相关    void slot_recycleFile(bool flag);
+    //回收站相关
+    void slot_recycleFile(bool flag);
     void on_pb_bin_clicked();
     void on_pb_restoreFile_clicked();
     void on_pb_deleteForever_clicked();
@@ -139,7 +143,8 @@ private slots:
     void slot_refreshObtainedShares();       // 自动加载已获取的分享列表
     void slot_onObtainedSharesLoaded(QList<QPair<int,QString>> list);  // 收到列表数据后展示
 
-    //分享预览相关    void slot_showBrowseShareResult(const char* buf, int nlen);
+    //分享预览相关
+    void slot_showBrowseShareResult(const char* buf, int nlen);
     void slot_browseShareEnterFolder(int row, int col);
     bool isImageFile(const QString& name);
     bool isTextFile(const QString& name);
@@ -162,12 +167,14 @@ private:
     QString m_sysPath;
     QSet<QString> m_pendingVideoPaths;
 
-    //分享预览状态    int     m_browseShareCode;      // 当前正在预览的分享码
+    //分享预览状态
+    int     m_browseShareCode;      // 当前正在预览的分享码
     QString m_browseSharePwd;       // 对应密码
     QString m_browseShareCurDir;    // 当前浏览目录（用于面包屑返回）
     QMap<int, QString> m_pendingSharePreviewFiles;  // 等待预览的分享文件：fileid -> fileName
 
-    //多分享合并加载    QQueue<QPair<int,QString>> m_browseQueue;  // 待加载的分享队列
+    //多分享合并加载
+    QQueue<QPair<int,QString>> m_browseQueue;  // 待加载的分享队列
     QMap<int,QString> m_sharePasswords;         // shareCode → password 持久映射
     int     m_currentLoadingCode;               // 当前正在加载的分享码
     QString m_currentLoadingPwd;                // 当前正在加载的分享密码

@@ -33,7 +33,8 @@ MainDialog::MainDialog(QWidget *parent)
     this->setWindowFlags(Qt::WindowMinMaxButtonsHint|Qt::WindowCloseButtonHint);  //设置最小最大化
 
     //去掉按钮的焦点框：点击后按钮会一直带着一圈颜色边框，
-    //只有按住时才有按压效果、松开后不留任何边框才符合预期    const QList<QPushButton*> btns = this->findChildren<QPushButton*>();
+    //只有按住时才有按压效果、松开后不留任何边框才符合预期
+    const QList<QPushButton*> btns = this->findChildren<QPushButton*>();
     for (QPushButton* b : btns)
         b->setFocusPolicy(Qt::NoFocus);
 
@@ -84,7 +85,8 @@ MainDialog::MainDialog(QWidget *parent)
     ui->table_complete->setContextMenuPolicy(Qt::CustomContextMenu);
     ui->table_complete->setSelectionMode(QAbstractItemView::ExtendedSelection);
     connect(ui->table_complete,&QTableWidget::customContextMenuRequested,this,[this](QPoint){this->m_menuComplete.exec(QCursor::pos());});
-    //初始化视频播放器    m_playerDialog = new PlayerDialog;
+    //初始化视频播放器
+    m_playerDialog = new PlayerDialog;
     m_sysPath = "";
     m_browseShareCode = 0;
     m_browseSharePwd  = "";
@@ -92,9 +94,11 @@ MainDialog::MainDialog(QWidget *parent)
     m_currentLoadingCode = 0;
     m_isLoadingShares = false;
 
-    //查看分享：双击进入文件夹或预览    connect(ui->table_viewShare, &QTableWidget::cellDoubleClicked,
+    //查看分享：双击进入文件夹或预览
+    connect(ui->table_viewShare, &QTableWidget::cellDoubleClicked,
             this, &MainDialog::slot_browseShareEnterFolder);
-    //查看分享：单击显示预览    connect(ui->table_viewShare, &QTableWidget::cellClicked,
+    //查看分享：单击显示预览
+    connect(ui->table_viewShare, &QTableWidget::cellClicked,
             this, &MainDialog::on_table_viewShare_cellClicked);
 
     //添加右键显示菜单 lambda表达式--匿名函数
@@ -120,7 +124,8 @@ MainDialog::MainDialog(QWidget *parent)
     connect(actionDownloadPause,SIGNAL(triggered(bool)),this,SLOT(slot_downloadPause(bool)));
     connect(actionDownloadResume,SIGNAL(triggered(bool)),this,SLOT(slot_downloadResume(bool)));
 
-    //"全部暂停"/"全部开始" — 遍历所有行执行操作    connect(actionUploadPauseAll, &QAction::triggered, this, [this](){
+    //"全部暂停"/"全部开始" — 遍历所有行执行操作
+    connect(actionUploadPauseAll, &QAction::triggered, this, [this](){
         for(int i=0; i<ui->table_upload->rowCount(); ++i){
             MyTableWidgetItem* item0=(MyTableWidgetItem*)ui->table_upload->item(i,0);
             QPushButton* btn=(QPushButton*)ui->table_upload->cellWidget(i,5);
@@ -164,20 +169,24 @@ MainDialog::MainDialog(QWidget *parent)
     connect(ui->pb_search, SIGNAL(clicked(bool)), this, SLOT(slot_searchFile(bool)));
     connect(ui->pb_searchBack, SIGNAL(clicked(bool)), this, SLOT(on_pb_searchBack_clicked()));
 
-    //左侧按钮：收藏和回收站页面切换    connect(ui->pb_store, SIGNAL(clicked(bool)), this, SLOT(on_pb_store_clicked()));
+    //左侧按钮：收藏和回收站页面切换
+    connect(ui->pb_store, SIGNAL(clicked(bool)), this, SLOT(on_pb_store_clicked()));
     connect(ui->pb_bin, SIGNAL(clicked(bool)), this, SLOT(on_pb_bin_clicked()));
 
-    //回收站页面按钮    connect(ui->pb_restoreFile, SIGNAL(clicked(bool)), this, SLOT(on_pb_restoreFile_clicked()));
+    //回收站页面按钮
+    connect(ui->pb_restoreFile, SIGNAL(clicked(bool)), this, SLOT(on_pb_restoreFile_clicked()));
     connect(ui->pb_deleteForever, SIGNAL(clicked(bool)), this, SLOT(on_pb_deleteForever_clicked()));
 
-    //收藏页右键菜单    QAction* action_cancelFavorite = new QAction("取消收藏");
+    //收藏页右键菜单
+    QAction* action_cancelFavorite = new QAction("取消收藏");
     m_menuFavorite.addAction(action_cancelFavorite);
     connect(action_cancelFavorite, SIGNAL(triggered(bool)), this, SLOT(slot_cancelFavorite(bool)));
     connect(ui->table_favorite, &QTableWidget::customContextMenuRequested, this, [this](QPoint){
         m_menuFavorite.exec(QCursor::pos());
     });
 
-    //回收站页右键菜单    QAction* action_restoreFile = new QAction("恢复");
+    //回收站页右键菜单
+    QAction* action_restoreFile = new QAction("恢复");
     QAction* action_deleteForever = new QAction("彻底删除");
     m_menuRecycle.addAction(action_restoreFile);
     m_menuRecycle.addAction(action_deleteForever);
@@ -327,7 +336,10 @@ void MainDialog::slot_shareFile(bool flag)
         QMessageBox::about(this,"提示","请选择要分享的文件");
         return;
     }
-    //去掉"设置分享密码"询问：服务端的分享协议与数据库都不支持    //分享密码，弹窗会让用户以为设置了密码而实际没有生效。    //密码参数保留在信号签名中，此处传空字符串。    Q_EMIT SIG_shareFile(array, ui->lb_path->text(), QString());
+    //去掉"设置分享密码"询问：服务端的分享协议与数据库都不支持
+    //分享密码，弹窗会让用户以为设置了密码而实际没有生效。
+    //密码参数保留在信号签名中，此处传空字符串。
+    Q_EMIT SIG_shareFile(array, ui->lb_path->text(), QString());
 }
 
 void MainDialog::slot_deleteFile(bool flag)
@@ -358,7 +370,8 @@ void MainDialog::slot_getShare(bool flag)
         QMessageBox::about(this,"提示","分享码非法");
         return;
     }
-    //输入密码    QString password = QInputDialog::getText(this,"密码验证","请输入分享密码（可为空）",
+    //输入密码
+    QString password = QInputDialog::getText(this,"密码验证","请输入分享密码（可为空）",
                                              QLineEdit::Password);
     //发送信号 什么目录下添加什么分享码的文件
     Q_EMIT SIG_getshareByLink(code,ui->lb_path->text(),password);
@@ -485,7 +498,8 @@ void MainDialog::slot_insertUploadFile(FileInfo &info)  //插入到上传中
     button->setMinimumWidth(50);
     //去掉焦点框：点击后不留颜色边框，只有按住时有按压效果
     button->setFocusPolicy(Qt::NoFocus);
-    //连接按钮点击：切换暂停/恢复    int timestamp = info.timestamp;
+    //连接按钮点击：切换暂停/恢复
+    int timestamp = info.timestamp;
     connect(button, &QPushButton::clicked, this, [this, timestamp, button](){
         if(button->text()=="暂停"){
             button->setText("开始");
@@ -555,7 +569,8 @@ void MainDialog::slot_insertDownloadFile(FileInfo &info)
     button->setMinimumWidth(50);
     //去掉焦点框：点击后不留颜色边框，只有按住时有按压效果
     button->setFocusPolicy(Qt::NoFocus);
-    //连接按钮点击：切换暂停/恢复    int timestamp = info.timestamp;
+    //连接按钮点击：切换暂停/恢复
+    int timestamp = info.timestamp;
     connect(button, &QPushButton::clicked, this, [this, timestamp, button](){
         if(button->text()=="暂停"){
             button->setText("开始");
@@ -622,7 +637,8 @@ void MainDialog::slot_insertViewShareInfo(QString name, int size, QString time, 
 void MainDialog::slot_openPath(bool flag){
     QPushButton* button=(QPushButton*)QObject::sender();
     QString path=button->toolTip();
-    ///转化成\\    path.replace('/','\\');
+    ///转化成\\
+    path.replace('/','\\');
     qDebug()<<path;
     //如何打开文件夹
     //通过qt打开进程
@@ -661,7 +677,8 @@ void MainDialog::slot_updateUploadFileProgress(int timestamp, int pos)
             //看是否结束
             if(item4->value()>=item4->maximum()){
                 //先拷贝文件信息，再删除该行：
-                //removeRow 会销毁 item0 对象，原先删除后再访问 item0->m_info                FileInfo tmpInfo = item0->m_info;
+                //removeRow 会销毁 item0 对象，原先删除后再访问 item0->m_info
+                FileInfo tmpInfo = item0->m_info;
                 //是 删除这一项 添加到完成
                 slot_deleteUploadFileByRow(i);
                 slot_insertUploadComplete(tmpInfo);
@@ -689,7 +706,8 @@ void MainDialog::slot_updateDownloadFileProgress(int timestamp, int pos)
             if (!m_pendingSharePreviewFiles.isEmpty()) {
                 QString dlName = item0->m_info.name;
                 int dlSize = item0->m_info.size;
-                //遍历待预览文件，按文件名匹配                for (auto it = m_pendingSharePreviewFiles.begin();
+                //遍历待预览文件，按文件名匹配
+                for (auto it = m_pendingSharePreviewFiles.begin();
                      it != m_pendingSharePreviewFiles.end(); ++it) {
                     if (it.value() == dlName) {
                         int pct = (dlSize > 0) ? (int)((qint64)pos * 100 / dlSize) : 100;
@@ -705,13 +723,17 @@ void MainDialog::slot_updateDownloadFileProgress(int timestamp, int pos)
 
             //看是否结束
             if(item4->value()>=item4->maximum()){
-                //检查是否是待播放的视频文件                if(m_pendingVideoPaths.contains(item0->m_info.absolutePath)){
+                //检查是否是待播放的视频文件
+                if(m_pendingVideoPaths.contains(item0->m_info.absolutePath)){
                     m_pendingVideoPaths.remove(item0->m_info.absolutePath);
                     //先拷贝文件信息，再删除该行：
-                    //removeRow 会销毁 item0 对象，原先删除行后仍访问 item0->m_info                    FileInfo tmpInfo = item0->m_info;
-                    //是 删除这一项 添加到完成                    slot_insertDownloadComplete(tmpInfo);
+                    //removeRow 会销毁 item0 对象，原先删除行后仍访问 item0->m_info
+                    FileInfo tmpInfo = item0->m_info;
+                    //是 删除这一项 添加到完成
+                    slot_insertDownloadComplete(tmpInfo);
                     slot_deleteDownloadFileByRow(i);
-                    //播放视频                    playVideoFile(tmpInfo.absolutePath);
+                    //播放视频
+                    playVideoFile(tmpInfo.absolutePath);
                     return;
                 }
                 //是 删除这一项 添加到完成
@@ -793,7 +815,8 @@ void MainDialog::on_table_file_cellDoubleClicked(int row, int column)
             playVideoFile(localPath);
         }else{
             if (fi.exists()) QFile::remove(localPath);
-            //先下载再播放            m_pendingVideoPaths.insert(localPath);
+            //先下载再播放
+            m_pendingVideoPaths.insert(localPath);
             Q_EMIT SIG_downloadFile(item0->m_info.fileid, dir2);
         }
     }
@@ -870,7 +893,8 @@ bool MainDialog::slot_getUploadFileInfoByTimestamp(int timestamp,FileInfo& info)
     return false;
 }
 
-//---- 视频播放相关 ----
+//---- 视频播放相关 ----
+
 bool MainDialog::isVideoFile(const QString& name)
 {
     QString lower = name.toLower();
@@ -893,7 +917,8 @@ void MainDialog::slot_playVideo(bool flag)
                 QString dir = ui->lb_path->text();
                 QString localPath = m_sysPath + dir + item0->m_info.name;
                 QFileInfo fi(localPath);
-                //解不出就删掉重新下载                if(fi.exists() && fi.size() == item0->m_info.size && checkVideoPlayable(localPath)){
+                //解不出就删掉重新下载
+                if(fi.exists() && fi.size() == item0->m_info.size && checkVideoPlayable(localPath)){
                     playVideoFile(localPath);
                 }else{
                     if (fi.exists()) QFile::remove(localPath);
@@ -911,7 +936,9 @@ void MainDialog::slot_onVideoReady(QString localPath)
 }
 
 //校验本地视频能否解出第一帧：
-//只做 avformat_open_input 校验无法发现内容损坏，播放会黑屏。//这里用解码器实际解出一帧来确认文件可用。bool MainDialog::checkVideoPlayable(const QString& localPath)
+//只做 avformat_open_input 校验无法发现内容损坏，播放会黑屏。
+//这里用解码器实际解出一帧来确认文件可用。
+bool MainDialog::checkVideoPlayable(const QString& localPath)
 {
     AVFormatContext *fmt = nullptr;
     QByteArray path = QFile::encodeName(localPath);
@@ -1004,14 +1031,16 @@ void MainDialog::slot_showSearchResults(const char *buf, int nlen)
     STRU_SEARCH_FILE_RS* rs = (STRU_SEARCH_FILE_RS*)buf;
     int count = rs->count;
 
-    //切到搜索分页    ui->sw_page->setCurrentIndex(3);
+    //切到搜索分页
+    ui->sw_page->setCurrentIndex(3);
 
     QTableWidget* table = ui->table_search;
     int oldRows = table->rowCount();
     for (int i = oldRows - 1; i >= 0; i--)
         table->removeRow(i);
 
-    //填充搜索结果    for (int i = 0; i < count; ++i) {
+    //填充搜索结果
+    for (int i = 0; i < count; ++i) {
         int row = table->rowCount();
         table->setRowCount(row + 1);
 
@@ -1032,11 +1061,14 @@ void MainDialog::slot_showSearchResults(const char *buf, int nlen)
     }
 }
 
-//========== 收藏功能 ==========
+//========== 收藏功能 ==========
+
 void MainDialog::on_pb_store_clicked()
 {
-    //切换到收藏页面    ui->sw_page->setCurrentIndex(4);
-    //请求刷新收藏列表    Q_EMIT SIG_getFavorites();
+    //切换到收藏页面
+    ui->sw_page->setCurrentIndex(4);
+    //请求刷新收藏列表
+    Q_EMIT SIG_getFavorites();
 }
 
 void MainDialog::slot_favoriteFile(bool flag)
@@ -1044,16 +1076,19 @@ void MainDialog::slot_favoriteFile(bool flag)
     qDebug()<<__func__;
     QVector<int> array;
     int count=ui->table_file->rowCount();
-    //遍历所有项    for(int i=0;i<count;++i){
+    //遍历所有项
+    for(int i=0;i<count;++i){
         MyTableWidgetItem* item0=(MyTableWidgetItem*)ui->table_file->item(i,0);
-        //看是否打钩        if(item0->checkState()==Qt::Checked)
+        //看是否打钩
+        if(item0->checkState()==Qt::Checked)
             array.push_back(item0->m_info.fileid);
     }
     if(array.isEmpty()){
         QMessageBox::about(this,"提示","请选择要收藏的文件");
         return;
     }
-    //发送信号（添加收藏）    Q_EMIT SIG_favoriteFile(array, ui->lb_path->text(), true);
+    //发送信号（添加收藏）
+    Q_EMIT SIG_favoriteFile(array, ui->lb_path->text(), true);
 }
 
 void MainDialog::slot_cancelFavorite(bool flag)
@@ -1062,20 +1097,23 @@ void MainDialog::slot_cancelFavorite(bool flag)
     QVector<int> array;
     QString dir = "/";
     int count = ui->table_favorite->rowCount();
-    //遍历收藏列表中被勾选的项    for (int i = count - 1; i >= 0; --i) {
+    //遍历收藏列表中被勾选的项
+    for (int i = count - 1; i >= 0; --i) {
         QTableWidgetItem* item0 = ui->table_favorite->item(i, 0);
         if (item0 && item0->checkState() == Qt::Checked) {
             int fileid = item0->data(Qt::UserRole).toInt();
             array.push_back(fileid);
             dir = item0->data(Qt::UserRole + 1).toString();
-            //乐观更新：立即从UI移除            ui->table_favorite->removeRow(i);
+            //乐观更新：立即从UI移除
+            ui->table_favorite->removeRow(i);
         }
     }
     if (array.isEmpty()) {
         QMessageBox::about(this, "提示", "请勾选要取消收藏的文件");
         return;
     }
-    //发送信号（取消收藏）    Q_EMIT SIG_favoriteFile(array, dir, false);
+    //发送信号（取消收藏）
+    Q_EMIT SIG_favoriteFile(array, dir, false);
 }
 
 void MainDialog::slot_insertFavoriteInfo(int fileid, QString name, QString dir, int size, QString time, QString type)
@@ -1130,11 +1168,14 @@ void MainDialog::slot_showFavorites(const char *buf, int nlen)
     }
 }
 
-//========== 回收站功能 ==========
+//========== 回收站功能 ==========
+
 void MainDialog::on_pb_bin_clicked()
 {
-    //切换到回收站页面    ui->sw_page->setCurrentIndex(5);
-    //请求刷新回收站列表    Q_EMIT SIG_getRecycle();
+    //切换到回收站页面
+    ui->sw_page->setCurrentIndex(5);
+    //请求刷新回收站列表
+    Q_EMIT SIG_getRecycle();
 }
 
 void MainDialog::slot_recycleFile(bool flag)
@@ -1142,9 +1183,11 @@ void MainDialog::slot_recycleFile(bool flag)
     qDebug()<<__func__;
     QVector<int> array;
     int count=ui->table_file->rowCount();
-    //遍历所有项    for(int i=0;i<count;++i){
+    //遍历所有项
+    for(int i=0;i<count;++i){
         MyTableWidgetItem* item0=(MyTableWidgetItem*)ui->table_file->item(i,0);
-        //看是否打钩        if(item0->checkState()==Qt::Checked)
+        //看是否打钩
+        if(item0->checkState()==Qt::Checked)
             array.push_back(item0->m_info.fileid);
     }
     if(array.isEmpty()){
@@ -1153,7 +1196,8 @@ void MainDialog::slot_recycleFile(bool flag)
     }
     if(QMessageBox::question(this,"确认","确定将选中文件移入回收站？") != QMessageBox::Yes)
         return;
-    //发送信号（UI刷新由服务端回复驱动，不做乐观删除）    Q_EMIT SIG_recycleFile(array, ui->lb_path->text());
+    //发送信号（UI刷新由服务端回复驱动，不做乐观删除）
+    Q_EMIT SIG_recycleFile(array, ui->lb_path->text());
 }
 
 void MainDialog::on_pb_restoreFile_clicked()
@@ -1213,7 +1257,8 @@ void MainDialog::slot_insertRecycleInfo(int fileid, QString name, QString dir, i
     QTableWidgetItem* item1 = new QTableWidgetItem(strSize);
     ui->table_recycle->setItem(rows, 1, item1);
 
-    //删除时间 + 剩余天数（回收站保留30天）    QString strTime = time;
+    //删除时间 + 剩余天数（回收站保留30天）
+    QString strTime = time;
     QDateTime delTime = QDateTime::fromString(time, "yyyy-MM-dd hh:mm:ss");
     if (delTime.isValid()) {
         int remain = 30 - delTime.daysTo(QDateTime::currentDateTime());
@@ -1278,16 +1323,22 @@ void MainDialog::on_pb_viewShare_clicked()
     ui->sw_page->setCurrentIndex(2);
     ui->tw_share->setCurrentIndex(1);
     slot_refreshObtainedShares();  // 自动加载已获取的分享列表
-//============================================================//查看分享 — 浏览目录//============================================================
-//返回上级按钮}
+//============================================================
+//查看分享 — 浏览目录
+//============================================================
+
+//返回上级按钮
+}
 void MainDialog::on_pb_shareBack_clicked()
 {
-    //如果正在浏览某个分享的根目录 → 回到多分享合并视图    if (m_browseShareCurDir == "/" || m_browseShareCurDir.isEmpty()) {
+    //如果正在浏览某个分享的根目录 → 回到多分享合并视图
+    if (m_browseShareCurDir == "/" || m_browseShareCurDir.isEmpty()) {
         slot_refreshObtainedShares();
         return;
     }
     if (m_browseShareCode == 0) return;
-    //去掉最后一级目录    QString dir = m_browseShareCurDir;
+    //去掉最后一级目录
+    QString dir = m_browseShareCurDir;
     if (dir.endsWith('/')) dir.chop(1);
     int pos = dir.lastIndexOf('/');
     if (pos < 0) dir = "/";
@@ -1295,22 +1346,27 @@ void MainDialog::on_pb_shareBack_clicked()
     Q_EMIT SIG_browseShare(m_browseShareCode, dir, m_browseSharePwd);
 }
 
-//清空上传列表void MainDialog::on_pb_clearUpload_clicked()
+//清空上传列表
+void MainDialog::on_pb_clearUpload_clicked()
 {
-    //确认对话框    QMessageBox::StandardButton reply = QMessageBox::question(
+    //确认对话框
+    QMessageBox::StandardButton reply = QMessageBox::question(
         this, "确认", "确定要清空所有上传记录吗？\n（正在上传的文件不会被取消）",
         QMessageBox::Yes | QMessageBox::No);
 
     if (reply == QMessageBox::Yes) {
-        //清空上传列表UI        int rows = ui->table_upload->rowCount();
+        //清空上传列表UI
+        int rows = ui->table_upload->rowCount();
         for (int i = rows - 1; i >= 0; --i) {
             ui->table_upload->removeRow(i);
         }
-        //同步清空SQLite中的上传任务        Q_EMIT SIG_clearUploadTasks();
+        //同步清空SQLite中的上传任务
+        Q_EMIT SIG_clearUploadTasks();
     }
 }
 
-//清空"已完成"列表（只清界面，不影响任何任务）void MainDialog::on_pb_clearComplete_clicked()
+//清空"已完成"列表（只清界面，不影响任何任务）
+void MainDialog::on_pb_clearComplete_clicked()
 {
     if(ui->table_complete->rowCount()==0) return;
     QMessageBox::StandardButton reply = QMessageBox::question(
@@ -1321,9 +1377,11 @@ void MainDialog::on_pb_shareBack_clicked()
     }
 }
 
-//删除"已完成"列表选中的行（右键菜单触发，支持多选）void MainDialog::slot_deleteCompleteSelected()
+//删除"已完成"列表选中的行（右键菜单触发，支持多选）
+void MainDialog::slot_deleteCompleteSelected()
 {
-    //收集选中的行号并去重    QSet<int> rowSet;
+    //收集选中的行号并去重
+    QSet<int> rowSet;
     for(QTableWidgetItem* item : ui->table_complete->selectedItems()){
         rowSet.insert(item->row());
     }
@@ -1334,7 +1392,8 @@ void MainDialog::on_pb_shareBack_clicked()
     }
 }
 
-//===== 已获取分享列表管理 =====
+//===== 已获取分享列表管理 =====
+
 void MainDialog::slot_refreshObtainedShares()
 {
     ui->table_viewShare->setRowCount(0);
@@ -1344,7 +1403,8 @@ void MainDialog::slot_refreshObtainedShares()
     m_browseQueue.clear();
     m_isLoadingShares = true;
 
-    //从SQLite加载所有已保存的分享码    Q_EMIT SIG_loadObtainedShares();
+    //从SQLite加载所有已保存的分享码
+    Q_EMIT SIG_loadObtainedShares();
 }
 
 void MainDialog::slot_onObtainedSharesLoaded(QList<QPair<int,QString>> list)
@@ -1359,7 +1419,8 @@ void MainDialog::slot_onObtainedSharesLoaded(QList<QPair<int,QString>> list)
 
     ui->table_viewShare->setRowCount(0);
     m_sharePasswords.clear();
-    //所有分享码入队，逐个发送 BrowseShareRq    for (auto& p : list) {
+    //所有分享码入队，逐个发送 BrowseShareRq
+    for (auto& p : list) {
         m_browseQueue.enqueue(p);
         m_sharePasswords[p.first] = p.second;  // 持久保存密码
     }
@@ -1370,16 +1431,20 @@ void MainDialog::slot_onObtainedSharesLoaded(QList<QPair<int,QString>> list)
     Q_EMIT SIG_browseShare(first.first, "/", first.second);
 }
 
-//服务端回包 → 填充 table_viewShare（双模式：多分享合并 / 单分享浏览）void MainDialog::slot_showBrowseShareResult(const char* buf, int nlen)
+//服务端回包 → 填充 table_viewShare（双模式：多分享合并 / 单分享浏览）
+void MainDialog::slot_showBrowseShareResult(const char* buf, int nlen)
 {
     STRU_BROWSE_SHARE_RS* rs = (STRU_BROWSE_SHARE_RS*)buf;
 
-    //=== 多分享加载模式：静默处理 ===    if (m_isLoadingShares) {
+    //=== 多分享加载模式：静默处理 ===
+    if (m_isLoadingShares) {
         if (rs->result != browse_share_success) {
-            //某个分享失效，跳过，继续加载下一个            goto nextInQueue;
+            //某个分享失效，跳过，继续加载下一个
+            goto nextInQueue;
         }
 
-        //追加 items 到表格（不清空），每个 item 记住归属的 shareCode        for (int i = 0; i < rs->count; ++i) {
+        //追加 items 到表格（不清空），每个 item 记住归属的 shareCode
+        for (int i = 0; i < rs->count; ++i) {
             int row = ui->table_viewShare->rowCount();
             ui->table_viewShare->setRowCount(row + 1);
 
@@ -1397,7 +1462,8 @@ void MainDialog::slot_onObtainedSharesLoaded(QList<QPair<int,QString>> list)
         }
 
 nextInQueue:
-        //出队下一个分享，继续加载        if (!m_browseQueue.isEmpty()) {
+        //出队下一个分享，继续加载
+        if (!m_browseQueue.isEmpty()) {
             auto next = m_browseQueue.dequeue();
             m_currentLoadingCode = next.first;
             m_currentLoadingPwd  = next.second;
@@ -1413,7 +1479,8 @@ nextInQueue:
         return;
     }
 
-    //=== 单分享浏览模式（文件夹导航） ===    if (rs->result == browse_share_invalid_link) {
+    //=== 单分享浏览模式（文件夹导航） ===
+    if (rs->result == browse_share_invalid_link) {
         QMessageBox::about(this, "提示", "分享链接无效");
         return;
     }
@@ -1448,7 +1515,8 @@ nextInQueue:
     }
 }
 
-//双击 table_viewShare：文件夹进入下级，文件显示预览void MainDialog::slot_browseShareEnterFolder(int row, int col)
+//双击 table_viewShare：文件夹进入下级，文件显示预览
+void MainDialog::slot_browseShareEnterFolder(int row, int col)
 {
     QTableWidgetItem* it = ui->table_viewShare->item(row, 0);
     if (!it) return;
@@ -1456,7 +1524,8 @@ nextInQueue:
     QString type = it->data(Qt::UserRole).toString();
 
     if (type != "file") {
-        //文件夹：使用 item 自己的 shareCode 导航        int shareCode = it->data(Qt::UserRole + 2).toInt();
+        //文件夹：使用 item 自己的 shareCode 导航
+        int shareCode = it->data(Qt::UserRole + 2).toInt();
         if (shareCode == 0) shareCode = m_browseShareCode;  // 回退方案
         m_browseShareCode = shareCode;
         m_isLoadingShares = false;  // 退出多分享模式
@@ -1465,7 +1534,8 @@ nextInQueue:
         if (newDir.isEmpty()) newDir = "/";
         if (!newDir.endsWith('/')) newDir += '/';
         newDir += name + '/';
-        //从密码映射中查找密码        QString pwd = m_sharePasswords.value(shareCode, m_browseSharePwd);
+        //从密码映射中查找密码
+        QString pwd = m_sharePasswords.value(shareCode, m_browseSharePwd);
         m_browseSharePwd = pwd;
         Q_EMIT SIG_browseShare(shareCode, newDir, pwd);
     } else {
@@ -1473,7 +1543,8 @@ nextInQueue:
     }
 }
 
-//单击 table_viewShare：文件显示预览，文件夹显示文件夹图标void MainDialog::on_table_viewShare_cellClicked(int row, int col)
+//单击 table_viewShare：文件显示预览，文件夹显示文件夹图标
+void MainDialog::on_table_viewShare_cellClicked(int row, int col)
 {
     QTableWidgetItem* it = ui->table_viewShare->item(row, 0);
     if (!it) return;
@@ -1481,8 +1552,10 @@ nextInQueue:
     QString type = it->data(Qt::UserRole).toString();
     int fileid = it->data(Qt::UserRole + 1).toInt();
 
-    //如果是图片、视频或文本文件，触发下载    if (type == "file" && (isImageFile(name) || isVideoFile(name) || isTextFile(name))) {
-        //检查文件大小：0字节文件跳过下载        QTableWidgetItem* sizeItem = ui->table_viewShare->item(row, 1);
+    //如果是图片、视频或文本文件，触发下载
+    if (type == "file" && (isImageFile(name) || isVideoFile(name) || isTextFile(name))) {
+        //检查文件大小：0字节文件跳过下载
+        QTableWidgetItem* sizeItem = ui->table_viewShare->item(row, 1);
         QString sizeStr = sizeItem ? sizeItem->text() : "";
         if (sizeStr == "0.00KB") {
             ui->lb_sharePreview->setPixmap(QPixmap());
@@ -1496,7 +1569,8 @@ nextInQueue:
         QString localPath = m_sysPath + "/" + name;
         QFileInfo localFi(localPath);
         if (localFi.exists() && localFi.size() > 0) {
-            //本地已有完整文件，直接预览，不走下载流程            qDebug() << "【预览】本地已有文件，直接预览:" << localPath;
+            //本地已有完整文件，直接预览，不走下载流程
+            qDebug() << "【预览】本地已有文件，直接预览:" << localPath;
             ui->lb_sharePreview->setAlignment(Qt::AlignCenter);
             if (isImageFile(name)) {
                 QPixmap pixmap(localPath);
@@ -1517,21 +1591,24 @@ nextInQueue:
         QString pwd = m_sharePasswords.value(shareCode, m_browseSharePwd);
         m_pendingSharePreviewFiles[fileid] = name;
         Q_EMIT SIG_downloadShareFile(shareCode, fileid, pwd);
-        //显示加载提示（下载进度由 slot_updateDownloadFileProgress 实时更新）        ui->lb_sharePreview->setPixmap(QPixmap());
+        //显示加载提示（下载进度由 slot_updateDownloadFileProgress 实时更新）
+        ui->lb_sharePreview->setPixmap(QPixmap());
         ui->lb_sharePreview->setText(QString("正在下载预览... 0%%\n\n%1\n%2").arg(name).arg(sizeStr));
     } else {
         showSharePreview(name, type, "");
     }
 }
 
-//预览核心：根据类型渲染右侧 lb_sharePreviewvoid MainDialog::showSharePreview(const QString& name, const QString& type,
+//预览核心：根据类型渲染右侧 lb_sharePreview
+void MainDialog::showSharePreview(const QString& name, const QString& type,
                                    const QString& /*localPath*/)
 {
     QSize previewSize = ui->lb_sharePreview->size();
     if (previewSize.width() < 10) previewSize = QSize(200, 300);
 
     if (type != "file") {
-        //文件夹：显示文件夹图标和名称        ui->lb_sharePreview->setPixmap(QPixmap());
+        //文件夹：显示文件夹图标和名称
+        ui->lb_sharePreview->setPixmap(QPixmap());
         ui->lb_sharePreview->setText("📁\n\n" + name + "\n\n双击进入文件夹");
         return;
     }
@@ -1539,24 +1616,28 @@ nextInQueue:
     QString ext = QFileInfo(name).suffix().toUpper();
 
     if (isImageFile(name)) {
-        //图片：显示图片图标        ui->lb_sharePreview->setPixmap(QPixmap());
+        //图片：显示图片图标
+        ui->lb_sharePreview->setPixmap(QPixmap());
         ui->lb_sharePreview->setText("🖼️\n\n" + name + "\n\n图片文件 (" + ext + ")\n\n点击文件名查看图片");
         return;
     }
 
     if (isTextFile(name)) {
-        //文本文件：显示文本图标        ui->lb_sharePreview->setPixmap(QPixmap());
+        //文本文件：显示文本图标
+        ui->lb_sharePreview->setPixmap(QPixmap());
         ui->lb_sharePreview->setText("📝\n\n" + name + "\n\n文本文件 (" + ext + ")\n\n点击文件名可下载并查看内容");
         return;
     }
 
     if (isVideoFile(name)) {
-        //视频：显示视频图标        ui->lb_sharePreview->setPixmap(QPixmap());
+        //视频：显示视频图标
+        ui->lb_sharePreview->setPixmap(QPixmap());
         ui->lb_sharePreview->setText("🎬\n\n" + name + "\n\n视频文件 (" + ext + ")\n\n点击查看视频缩略图");
         return;
     }
 
-    //其他文件类型：显示扩展名图标    ui->lb_sharePreview->setPixmap(QPixmap());
+    //其他文件类型：显示扩展名图标
+    ui->lb_sharePreview->setPixmap(QPixmap());
     QString displayText = "📄\n\n" + name + "\n\n";
     if (!ext.isEmpty()) {
         displayText += ext + " 文件";
@@ -1597,7 +1678,8 @@ bool MainDialog::isImageFile(const QString& name)
            lower.endsWith(".tiff") || lower.endsWith(".ico");
 }
 
-//文本文件预览：读取前4KB内容显示void MainDialog::showTextPreview(const QString& localPath, const QString& name)
+//文本文件预览：读取前4KB内容显示
+void MainDialog::showTextPreview(const QString& localPath, const QString& name)
 {
     QFile file(localPath);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -1607,7 +1689,8 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //读取前4KB    QByteArray data = file.read(4096);
+    //读取前4KB
+    QByteArray data = file.read(4096);
     file.close();
 
     if (data.isEmpty()) {
@@ -1617,9 +1700,11 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //尝试UTF-8解码，失败则尝试GBK/GB18030    QString text = QString::fromUtf8(data);
+    //尝试UTF-8解码，失败则尝试GBK/GB18030
+    QString text = QString::fromUtf8(data);
     if (text.toUtf8() != data) {
-        //不是有效UTF-8，尝试GB18030（兼容GBK/GB2312）        QTextCodec *codec = QTextCodec::codecForName("GB18030");
+        //不是有效UTF-8，尝试GB18030（兼容GBK/GB2312）
+        QTextCodec *codec = QTextCodec::codecForName("GB18030");
         if (codec) {
             text = codec->toUnicode(data);
         } else {
@@ -1627,7 +1712,8 @@ bool MainDialog::isImageFile(const QString& name)
         }
     }
 
-    //截断过长内容    if (text.length() > 2000) {
+    //截断过长内容
+    if (text.length() > 2000) {
         text = text.left(2000) + "\n\n... (内容过长，已截断)";
     }
 
@@ -1637,9 +1723,11 @@ bool MainDialog::isImageFile(const QString& name)
     ui->lb_sharePreview->setWordWrap(true);
 }
 
-//视频缩略图：使用FFmpeg提取第一帧void MainDialog::showVideoThumbnail(const QString& localPath, const QString& name)
+//视频缩略图：使用FFmpeg提取第一帧
+void MainDialog::showVideoThumbnail(const QString& localPath, const QString& name)
 {
-    //极小文件（<1KB）或空文件：不调用FFmpeg，直接显示提示    QFileInfo fi(localPath);
+    //极小文件（<1KB）或空文件：不调用FFmpeg，直接显示提示
+    QFileInfo fi(localPath);
     if (!fi.exists() || fi.size() < 1024) {
         ui->lb_sharePreview->setPixmap(QPixmap());
         if (fi.size() == 0)
@@ -1650,10 +1738,12 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //路径转换为本地8位编码（FFmpeg在Windows上使用ANSI）    QByteArray pathBytes = localPath.toLocal8Bit();
+    //路径转换为本地8位编码（FFmpeg在Windows上使用ANSI）
+    QByteArray pathBytes = localPath.toLocal8Bit();
     const char* filePath = pathBytes.constData();
 
-    //注册所有编解码器    av_register_all();
+    //注册所有编解码器
+    av_register_all();
 
     AVFormatContext* pFormatCtx = avformat_alloc_context();
     if (!pFormatCtx) {
@@ -1661,19 +1751,22 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //打开视频文件    if (avformat_open_input(&pFormatCtx, filePath, nullptr, nullptr) != 0) {
+    //打开视频文件
+    if (avformat_open_input(&pFormatCtx, filePath, nullptr, nullptr) != 0) {
         avformat_free_context(pFormatCtx);
         ui->lb_sharePreview->setText(QString("预览失败\n无法打开视频\n%1").arg(name));
         return;
     }
 
-    //获取流信息    if (avformat_find_stream_info(pFormatCtx, nullptr) < 0) {
+    //获取流信息
+    if (avformat_find_stream_info(pFormatCtx, nullptr) < 0) {
         avformat_close_input(&pFormatCtx);
         ui->lb_sharePreview->setText(QString("预览失败\n无法读取视频信息\n%1").arg(name));
         return;
     }
 
-    //查找视频流    int videoStream = -1;
+    //查找视频流
+    int videoStream = -1;
     for (unsigned int i = 0; i < pFormatCtx->nb_streams; i++) {
         if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
             videoStream = i;
@@ -1686,7 +1779,8 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //打开解码器    AVCodecContext* pCodecCtx = pFormatCtx->streams[videoStream]->codec;
+    //打开解码器
+    AVCodecContext* pCodecCtx = pFormatCtx->streams[videoStream]->codec;
     AVCodec* pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
     if (!pCodec || avcodec_open2(pCodecCtx, pCodec, nullptr) < 0) {
         avformat_close_input(&pFormatCtx);
@@ -1694,7 +1788,8 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //分配帧    AVFrame* pFrame = av_frame_alloc();
+    //分配帧
+    AVFrame* pFrame = av_frame_alloc();
     AVFrame* pFrameRGB = av_frame_alloc();
     if (!pFrame || !pFrameRGB) {
         avcodec_close(pCodecCtx);
@@ -1704,7 +1799,8 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //计算RGB缓冲区大小并分配    int numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB32,
+    //计算RGB缓冲区大小并分配
+    int numBytes = av_image_get_buffer_size(AV_PIX_FMT_RGB32,
                                              pCodecCtx->width, pCodecCtx->height, 1);
     uint8_t* buffer = (uint8_t*)av_malloc(numBytes);
     if (!buffer) {
@@ -1718,7 +1814,8 @@ bool MainDialog::isImageFile(const QString& name)
                          buffer, AV_PIX_FMT_RGB32,
                          pCodecCtx->width, pCodecCtx->height, 1);
 
-    //创建SWS缩放上下文（YUV → RGB）    SwsContext* swsCtx = sws_getContext(
+    //创建SWS缩放上下文（YUV → RGB）
+    SwsContext* swsCtx = sws_getContext(
         pCodecCtx->width, pCodecCtx->height, pCodecCtx->pix_fmt,
         pCodecCtx->width, pCodecCtx->height, AV_PIX_FMT_RGB32,
         SWS_BICUBIC, nullptr, nullptr, nullptr);
@@ -1732,7 +1829,8 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //读取数据包直到解码出第一帧视频（最多尝试500个包，防止损坏文件无限循环）    AVPacket packet;
+    //读取数据包直到解码出第一帧视频（最多尝试500个包，防止损坏文件无限循环）
+    AVPacket packet;
     int frameFinished = 0;
     bool gotFrame = false;
     int maxPackets = 500;  // 安全限制：防止在损坏/不完整文件上无限循环
@@ -1741,14 +1839,16 @@ bool MainDialog::isImageFile(const QString& name)
         if (packet.stream_index == videoStream) {
             avcodec_decode_video2(pCodecCtx, pFrame, &frameFinished, &packet);
             if (frameFinished) {
-                //YUV → RGB转换                sws_scale(swsCtx,
+                //YUV → RGB转换
+                sws_scale(swsCtx,
                           (uint8_t const* const*)pFrame->data,
                           pFrame->linesize, 0,
                           pCodecCtx->height,
                           pFrameRGB->data,
                           pFrameRGB->linesize);
 
-                //创建QImage（深拷贝，防止buffer释放后失效）                QImage img(pFrameRGB->data[0],
+                //创建QImage（深拷贝，防止buffer释放后失效）
+                QImage img(pFrameRGB->data[0],
                            pCodecCtx->width, pCodecCtx->height,
                            pFrameRGB->linesize[0],
                            QImage::Format_RGB32);
@@ -1772,7 +1872,8 @@ bool MainDialog::isImageFile(const QString& name)
         ui->lb_sharePreview->setText(QString("预览失败\n无法解码视频帧\n%1").arg(name));
     }
 
-    //清理资源    sws_freeContext(swsCtx);
+    //清理资源
+    sws_freeContext(swsCtx);
     av_free(buffer);
     av_frame_free(&pFrame);
     av_frame_free(&pFrameRGB);
@@ -1780,7 +1881,8 @@ bool MainDialog::isImageFile(const QString& name)
     avformat_close_input(&pFormatCtx);
 }
 
-//早期预览（512KB时触发）：尝试用不完整文件显示预览void MainDialog::slot_tryEarlyPreview(int fileid, QString localPath)
+//早期预览（512KB时触发）：尝试用不完整文件显示预览
+void MainDialog::slot_tryEarlyPreview(int fileid, QString localPath)
 {
     if (!m_pendingSharePreviewFiles.contains(fileid))
         return;
@@ -1791,14 +1893,20 @@ bool MainDialog::isImageFile(const QString& name)
 
     if (isVideoFile(fileName)) {
         if (fi.size() < 1024 * 1024) return;
-        //尝试FFmpeg打开不完整视频取第一帧        showVideoThumbnail(localPath, fileName);
-        //完整下载后会再次触发 slot_shareFileDownloaded 重新渲染    }
-    //图片和文本等完整下载后再预览（它们需要完整数据）}
+        //尝试FFmpeg打开不完整视频取第一帧
+        showVideoThumbnail(localPath, fileName);
+        //完整下载后会再次触发 slot_shareFileDownloaded 重新渲染
+    }
+    //图片和文本等完整下载后再预览（它们需要完整数据）
+}
 
-//分享文件下载完成后的预览处理void MainDialog::slot_shareFileDownloaded(int fileid, QString localPath)
+//分享文件下载完成后的预览处理
+void MainDialog::slot_shareFileDownloaded(int fileid, QString localPath)
 {
-    //新增：空路径表示服务器返回错误          if (localPath.isEmpty()) {
-              //...找到 pendingSharePreviewFiles 中的文件名              QString fileName;
+    //新增：空路径表示服务器返回错误
+          if (localPath.isEmpty()) {
+              //...找到 pendingSharePreviewFiles 中的文件名
+              QString fileName;
               if (m_pendingSharePreviewFiles.contains(fileid)) {
                   fileName = m_pendingSharePreviewFiles.take(fileid);
               }
@@ -1808,11 +1916,13 @@ bool MainDialog::isImageFile(const QString& name)
           }
     qDebug() << "【预览】slot_shareFileDownloaded 被调用! fileid=" << fileid << "path=" << localPath;
 
-    //检查是否在待预览列表中（先按fileid查，再按文件名回退匹配）    QString fileName;
+    //检查是否在待预览列表中（先按fileid查，再按文件名回退匹配）
+    QString fileName;
     if (m_pendingSharePreviewFiles.contains(fileid)) {
         fileName = m_pendingSharePreviewFiles.take(fileid);
     } else {
-        //回退：按本地文件名匹配        QFileInfo fi(localPath);
+        //回退：按本地文件名匹配
+        QFileInfo fi(localPath);
         for (auto it = m_pendingSharePreviewFiles.begin(); it != m_pendingSharePreviewFiles.end(); ++it) {
             if (it.value() == fi.fileName()) {
                 fileName = it.value();
@@ -1829,15 +1939,18 @@ bool MainDialog::isImageFile(const QString& name)
         return;
     }
 
-    //0 字节文件：直接显示空文件提示，不尝试任何编解码    if (fileInfo.size() == 0) {
+    //0 字节文件：直接显示空文件提示，不尝试任何编解码
+    if (fileInfo.size() == 0) {
         ui->lb_sharePreview->setPixmap(QPixmap());
         ui->lb_sharePreview->setText(QString("(空文件)\n%1\n\n文件大小为 0 字节").arg(fileName));
         ui->lb_sharePreview->setAlignment(Qt::AlignCenter);
         return;
     }
 
-    //根据文件类型显示预览    if (isImageFile(fileName)) {
-        //显示图片预览        QPixmap pixmap(localPath);
+    //根据文件类型显示预览
+    if (isImageFile(fileName)) {
+        //显示图片预览
+        QPixmap pixmap(localPath);
         if (pixmap.isNull()) {
             ui->lb_sharePreview->setText("预览失败\n无法加载图片");
         } else {
@@ -1847,11 +1960,14 @@ bool MainDialog::isImageFile(const QString& name)
                 pixmap.scaled(previewSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
         }
     } else if (isVideoFile(fileName)) {
-        //视频：提取第一帧作为缩略图        showVideoThumbnail(localPath, fileName);
+        //视频：提取第一帧作为缩略图
+        showVideoThumbnail(localPath, fileName);
     } else if (isTextFile(fileName)) {
-        //文本：显示前4KB内容        showTextPreview(localPath, fileName);
+        //文本：显示前4KB内容
+        showTextPreview(localPath, fileName);
     } else {
-        //其他类型：显示文件信息        QString ext = QFileInfo(fileName).suffix().toUpper();
+        //其他类型：显示文件信息
+        QString ext = QFileInfo(fileName).suffix().toUpper();
         ui->lb_sharePreview->setPixmap(QPixmap());
         ui->lb_sharePreview->setText(
             QString("文件已下载\n\n%1\n\n类型: %2\n大小: %3")

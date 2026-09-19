@@ -66,7 +66,8 @@ bool UdpNet::InitNet(const char* szBufIP , unsigned short port)
         return false;
     }
 
-    //收数据 -- 创建线程 CreateThread  WinAPI  strcpy  C/C++ RunTime 库函数 创建内存块    m_hThreadHandle = (HANDLE)_beginthreadex(  NULL, 0 ,&RecvThread ,this , 0 , NULL );     //( CreateThread 创建内存块 )
+    //收数据 -- 创建线程 CreateThread  WinAPI  strcpy  C/C++ RunTime 库函数 创建内存块
+    m_hThreadHandle = (HANDLE)_beginthreadex(  NULL, 0 ,&RecvThread ,this , 0 , NULL );     //( CreateThread 创建内存块 )
     //_endthreadex(); -- 回收内存块      //( ExitThread 不回收内存块 ) --内存泄露
 
     return true;
@@ -131,7 +132,8 @@ void UdpNet::RecvData()
             memcpy( packbuf  ,buf , nRes);
             if( m_pMediator ){
                 m_pMediator->DealData( addrClient.sin_addr.S_un.S_addr , packbuf , nRes );
-                //要回收这个空间 delete[] packbuf;            }
+                //要回收这个空间 delete[] packbuf;
+            }
         }
     }
 }

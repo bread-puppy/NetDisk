@@ -67,14 +67,17 @@ typedef struct VideoState {
     //////////////////////////////////////////////////////
     int64_t start_time; //单位 微秒
     //视频帧节拍器（秒）：音频未就绪/无PTS时按视频自身时间轴
-    //匀速播放。原先只靠音频时钟同步，音频时钟不走时视频线程会永久    //等待（黑屏）或全速狂奔（一闪而过）。    double frame_timer;
+    //匀速播放。原先只靠音频时钟同步，音频时钟不走时视频线程会永久
+    //等待（黑屏）或全速狂奔（一闪而过）。
+    double frame_timer;
     VideoState()
     {
         audio_clock = video_clock  = start_time = 0;
         pauseMutex = nullptr;
         pauseCond  = nullptr;
     }
-    //暂停/恢复 条件变量（由 VideoPlayer::run() 初始化）    QMutex*       pauseMutex;
+    //暂停/恢复 条件变量（由 VideoPlayer::run() 初始化）
+    QMutex*       pauseMutex;
     QWaitCondition* pauseCond;
     VideoPlayer* m_player;//用于调用函数
 } VideoState;

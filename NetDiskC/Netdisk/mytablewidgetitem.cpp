@@ -1,4 +1,4 @@
-﻿#include "mytablewidgetitem.h"
+#include "mytablewidgetitem.h"
 
 MyTableWidgetItem::MyTableWidgetItem()
 {

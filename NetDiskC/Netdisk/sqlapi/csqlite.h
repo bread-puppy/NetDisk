@@ -1,4 +1,4 @@
-﻿#ifndef CSQLITE_H
+#ifndef CSQLITE_H
 #define CSQLITE_H
 
 #include<QStringList>

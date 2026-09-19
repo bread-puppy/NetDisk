@@ -26,7 +26,7 @@
 #define NetMap(a) m_netPackMap[a-_DEF_PACK_BASE]
 
 //客户端先计算密码 MD5，服务端收到后再按固定盐计算
-//非阻塞暂停检查：暂停时直接返回 true，不阻塞主线程 static bool checkPaused(FileInfo& info)
+static bool checkPaused(FileInfo& info)
  {
      return info.isPause != 0;
  }
@@ -79,7 +79,7 @@ void Ckernel::setSystemPath()  //系统路径组成：./NetDisk +dir +name
     m_sysPath=path;
 }
 
-//QString 转 char*（GB2312）void Utf8ToGB2312( char* gbbuf , int nlen , const QString& utf8)
+void Utf8ToGB2312( char* gbbuf , int nlen , const QString& utf8)
 {
     //转码的对象
     QTextCodec * gb2312code = QTextCodec::codecForName( "gb2312");
@@ -102,7 +102,7 @@ static std::string getFileMD5(QString path){  //获取文件MD5
     }
     int len=0;
     MD5 md;
-    //使用 64KB 大缓冲区，大幅减少循环次数（15MB 文件从 15000 次降到 ~240 次）    char bigBuf[65536];
+    char bigBuf[65536];
     do{
         len=fread(bigBuf,1,sizeof(bigBuf),pFile);
         md.update(bigBuf,len);
@@ -160,7 +160,7 @@ Ckernel::Ckernel(QObject *parent) : QObject(parent),m_id(0),m_curDir("/"),m_quit
     connect(m_mainDialog.data(),SIGNAL(SIG_deleteFile(QVector<int>,QString)),this,SLOT(slot_deleteFile(QVector<int>,QString)));
     connect(m_mainDialog.data(),SIGNAL(SIG_setUploadPause(int,int)),this,SLOT(slot_setUploadPause(int,int)));
     connect(m_mainDialog.data(),SIGNAL(SIG_setDownloadPause(int,int)),this,SLOT(slot_setDownloadPause(int,int)));
-    //视频就绪信号：视频下载完毕后通知 MainDialog 播放    connect(this,SIGNAL(SIG_videoReady(QString)),m_mainDialog.data(),SLOT(slot_onVideoReady(QString)));
+    connect(this,SIGNAL(SIG_videoReady(QString)),m_mainDialog.data(),SLOT(slot_onVideoReady(QString)));
     connect(m_mainDialog.data(), SIGNAL(SIG_searchFile(QString)),
               this, SLOT(slot_searchFile(QString)));
     connect(m_mainDialog.data(), SIGNAL(SIG_favoriteFile(QVector<int>,QString,bool)),
@@ -228,7 +228,7 @@ void Ckernel::slot_destroy(){
         m_heartbeatTimer->stop();
     m_tcpClient->CloseNet();
     m_tcpClient.reset();
-    //清理连接池    if(m_tcpClientPool){
+    if(m_tcpClientPool){
         m_tcpClientPool->closeAll();
         m_tcpClientPool.reset();
     }
@@ -293,8 +293,8 @@ void Ckernel::slot_uploadFile(QString path, QString dir)  //上传文件槽函�
 {
     QFileInfo qFileInfo(path);
 
-    //对于小文件（<1MB），直接同步计算MD5；大文件异步计算    if(qFileInfo.size() < 1024*1024) {
-        //小文件，同步处理        FileInfo info;
+    if(qFileInfo.size() < 1024*1024) {
+        FileInfo info;
         info.absolutePath=path;
         info.dir=dir;
         info.md5=QString::fromStdString(getFileMD5(path));
@@ -359,7 +359,7 @@ void Ckernel::slot_uploadFile(QString path, QString dir)  //上传文件槽函�
             std::string md5 = watcher->result();
             watcher->deleteLater();
 
-            //MD5计算完成，继续上传流程            FileInfo info;
+            FileInfo info;
             info.absolutePath=path;
             info.dir=dir;
             info.md5=QString::fromStdString(md5);
@@ -576,10 +576,10 @@ void Ckernel::slot_dealLoginRs(unsigned int lSendIp, char *buf, int nlen)
         //刷新 发获取请求
         slot_getMyShare();
         InitDatabase(m_id);
-        //自动加载已获取的分享文件列表        QTimer::singleShot(200, this, [this](){
+        QTimer::singleShot(200, this, [this](){
             m_mainDialog->slot_refreshObtainedShares();
         });
-        //初始化连接池（超大文件分片并行传输）        QTimer::singleShot(100, this, [this](){
+        QTimer::singleShot(100, this, [this](){
             initTcpClientPool();
         });
         break;
@@ -632,7 +632,7 @@ void Ckernel::slot_dealUploadFileRs(unsigned int lSendIp, char *buf, int nlen)  
     //插入上传信息到”上传中”的控件里
     slot_writeUploadTask(info);
     m_mainDialog->slot_insertUploadFile(info);
-    //超大文件切换到四路连接并行上传；普通文件继续使用原有单连接逻辑    if (info.size >= CHUNK_THRESHOLD && m_tcpClientPool && m_tcpClientPool->isAllOpen()) {
+    if (info.size >= CHUNK_THRESHOLD && m_tcpClientPool && m_tcpClientPool->isAllOpen()) {
         m_chunkUploadActive.insert(info.timestamp);
         m_chunkUploadFinished[info.timestamp] = 0;
         slot_uploadFileChunked(info);
@@ -802,7 +802,7 @@ void Ckernel::slot_dealFileHeaderRq(unsigned int lSendIp, char *buf, int nlen)
     STRU_FILE_HEADER_RQ*rq=(STRU_FILE_HEADER_RQ*)buf;
     if (rq->size < 0) {
               qDebug() << "【预览】服务器返回错误: 文件不存在或已被删除, fileid=" << rq->fileid;
-              //通知 MainDialog 显示错误              QMetaObject::invokeMethod(m_mainDialog.data(), "slot_shareFileDownloaded",
+              QMetaObject::invokeMethod(m_mainDialog.data(), "slot_shareFileDownloaded",
                                         Qt::QueuedConnection,
                                         Q_ARG(int, rq->fileid),
                                         Q_ARG(QString, QString()));
@@ -919,7 +919,7 @@ void Ckernel::slot_dealFileContentRq(unsigned int lSendIp, char *buf, int nlen){
           info.pos += rq->len;
           Q_EMIT SIG_updateDownloadFileProgress(rq->timestamp, info.pos);
 
-          //分享预览：收到512KB立刻尝试预览          if (!info.previewShown && info.pos >= 524288) {
+          if (!info.previewShown && info.pos >= 524288) {
               info.previewShown = true;
               m_mainDialog->slot_tryEarlyPreview(info.fileid, info.absolutePath);
           }
@@ -934,7 +934,7 @@ void Ckernel::slot_dealFileContentRq(unsigned int lSendIp, char *buf, int nlen){
           SendData((char*)&rs, sizeof(rs));
 
           if (info.pos >= info.size) {
-              //=== 下载完成，MD5校验 ===              MD5 md5;
+              MD5 md5;
               md5.update((const void*)info.mappedData, info.size);
               QString computedMD5 = QString::fromStdString(md5.toString());
 
@@ -950,7 +950,7 @@ void Ckernel::slot_dealFileContentRq(unsigned int lSendIp, char *buf, int nlen){
                   QFile::remove(info.absolutePath);
               }
 
-              //通知分享文件预览（校验失败时传空路径，禁止继续解码损坏文件）              int savedFid = info.fileid;
+              int savedFid = info.fileid;
               QString savedPath = valid ? info.absolutePath : QString();
               slot_deleteDownloadTask(info);
               m_mapTimeStampToFileinfo.erase(rq->timestamp);
@@ -968,7 +968,7 @@ void Ckernel::slot_dealFileContentRq(unsigned int lSendIp, char *buf, int nlen){
               info.pos += len;
               Q_EMIT SIG_updateDownloadFileProgress(rq->timestamp, info.pos);
 
-              //分享预览：收到512KB立刻尝试预览              if (!info.previewShown && info.pos >= 524288) {
+              if (!info.previewShown && info.pos >= 524288) {
                   info.previewShown = true;
                   m_mainDialog->slot_tryEarlyPreview(info.fileid, info.absolutePath);
               }
@@ -976,7 +976,7 @@ void Ckernel::slot_dealFileContentRq(unsigned int lSendIp, char *buf, int nlen){
               if (info.pos >= info.size) {
                   fclose(info.pFile);
 
-                  //=== 下载完成，MD5校验 ===                  QString computedMD5 = QString::fromStdString(
+                  QString computedMD5 = QString::fromStdString(
                       getFileMD5(info.absolutePath));
 
                   bool valid = (computedMD5 == info.md5);
@@ -987,7 +987,7 @@ void Ckernel::slot_dealFileContentRq(unsigned int lSendIp, char *buf, int nlen){
                       QFile::remove(info.absolutePath);
                   }
 
-                  //通知分享文件预览（校验失败时传空路径，禁止继续解码损坏文件）                  int savedFid = info.fileid;
+                  int savedFid = info.fileid;
                   QString savedPath = valid ? info.absolutePath : QString();
                   slot_deleteDownloadTask(info);
                   m_mapTimeStampToFileinfo.erase(rq->timestamp);
@@ -1046,7 +1046,7 @@ void Ckernel::slot_dealShareFileRs(unsigned int lSendIp, char *buf, int nlen)
     STRU_SHARE_FILE_RS* rs =(STRU_SHARE_FILE_RS*)buf;
     //判断是否成功
     if(rs->result!=1) return;
-    //服务端回复中没有密码字段，改为普通成功提示    QMessageBox::about(m_mainDialog.data(), "分享成功",
+    QMessageBox::about(m_mainDialog.data(), "分享成功",
         "分享成功！\n分享码可在\"我的分享\"中查看");
     //刷新 发获取请求
     slot_getMyShare();
@@ -1060,7 +1060,7 @@ void Ckernel::slot_dealMyShareRs(unsigned int lSendIp, char *buf, int nlen)
     //遍历 分享文件的信息 添加到控件上
     m_mainDialog->slot_deleteAllShareInfo();
     for(int i=0;i<count;++i){
-        //服务端回复的分享条目没有密码字段，密码列填空        m_mainDialog->slot_insertShareFileInfo(
+        m_mainDialog->slot_insertShareFileInfo(
             rs->items[i].name,
             rs->items[i].size,
             rs->items[i].time,
@@ -1074,7 +1074,7 @@ void Ckernel::slot_dealGetShareRs(unsigned int lSendIp, char *buf, int nlen)
     //拆包
     STRU_GET_SHARE_RS* rs=(STRU_GET_SHARE_RS*)buf;
     //result为0失败，1成功
-    //此处按服务端真实语义重新映射处理。    switch(rs->result){
+    switch(rs->result){
     case 1:  // 服务端：查到分享内容，获取成功
         if(QString::fromStdString(rs->dir)==m_curDir)
             slot_getCurDirFileList();
@@ -1121,11 +1121,11 @@ void Ckernel::slot_dealDeleteFileRs(unsigned int lSendIp, char *buf, int nlen)
     STRU_DELETE_FILE_RS* rs=(STRU_DELETE_FILE_RS*)buf;
     //看是否刷新
     if(rs->result==1){
-        //如果是从回收站发起的彻底删除，刷新回收站列表        if (m_deletingFromRecycle) {
+        if (m_deletingFromRecycle) {
             m_deletingFromRecycle = false;
             slot_getRecycle();
         }
-        //如果删除的是当前目录下的文件，刷新文件列表        if(QString::fromStdString(rs->dir)==m_curDir) {
+        if(QString::fromStdString(rs->dir)==m_curDir) {
             m_mainDialog->slot_deleteAllFileInfo();
             slot_getCurDirFileList();
         }
@@ -1137,7 +1137,7 @@ void Ckernel::slot_dealContinueUploadRs(unsigned int lSendIp, char *buf, int nle
     //拆包
     STRU_CONTINUE_UPLOAD_RS* rs=(STRU_CONTINUE_UPLOAD_RS*)buf;
     //【MD5校验】pos=-1 表示服务端拒绝续传：本地文件与服务端记录的MD5不一致
-    //（本地文件被换成其他版本，继续传会混入两种内容），    //或服务端已无未完成的上传记录（任务已完成/已失效）    if(rs->pos < 0){
+    if(rs->pos < 0){
         QMessageBox::about(m_mainDialog.data(),"提示",
             "无法续传：本地文件与服务端内容不一致，或该上传任务已失效\n请删除该上传任务后重新上传");
         return;
@@ -1273,7 +1273,7 @@ void Ckernel::slot_setUploadPause(int timestamp, int isPause)
     if(m_mapTimeStampToFileinfo.count(timestamp)>0) {
           m_mapTimeStampToFileinfo[timestamp].isPause = isPause;
           if(isPause == 0) {
-              //恢复上传：立刻发送下一个文件块，重新驱动上传循环              FileInfo& inf = m_mapTimeStampToFileinfo[timestamp];
+              FileInfo& inf = m_mapTimeStampToFileinfo[timestamp];
               STRU_FILE_CONTENT_RQ contentRq;
               contentRq.fileid = inf.fileid;
               contentRq.timestamp = timestamp;
@@ -1297,7 +1297,7 @@ void Ckernel::slot_setUploadPause(int timestamp, int isPause)
             //没找到
             return;
         }
-        //优先尝试 mmap        info.qFile.reset(new QFile(info.absolutePath));
+        info.qFile.reset(new QFile(info.absolutePath));
         if(info.qFile->open(QIODevice::ReadOnly)){
             info.mappedData=info.qFile->map(0, info.size);
             if(info.mappedData){
@@ -1341,7 +1341,7 @@ void Ckernel::slot_setDownloadPause(int timestamp, int isPause)
     if(m_mapTimeStampToFileinfo.count(timestamp)>0) {
           m_mapTimeStampToFileinfo[timestamp].isPause = isPause;
           if(isPause == 0) {
-              //恢复下载：发续传请求让服务器从当前位置重新开始发送              FileInfo& inf = m_mapTimeStampToFileinfo[timestamp];
+              FileInfo& inf = m_mapTimeStampToFileinfo[timestamp];
               STRU_CONTINUE_DOWNLOAD_RQ rq;
               rq.fileid = inf.fileid;
               string dirstr = inf.dir.toStdString();
@@ -1365,7 +1365,7 @@ void Ckernel::slot_setDownloadPause(int timestamp, int isPause)
                 //没找到
                 return;
             }
-            //优先尝试 mmap            info.qFile.reset(new QFile(info.absolutePath));
+            info.qFile.reset(new QFile(info.absolutePath));
             if(info.qFile->open(QIODevice::ReadWrite)){
                 if(info.qFile->resize(info.size)){
                     info.mappedData=info.qFile->map(0, info.size);
@@ -1396,7 +1396,7 @@ void Ckernel::slot_setDownloadPause(int timestamp, int isPause)
             rq.timestamp=info.timestamp;
             rq.userid=m_id;
             //【MD5校验】计算本地已下载部分内容的MD5一并发送，
-            //服务端会与其文件前pos字节的MD5比对，不一致则拒绝续传            std::string partialMd5 = getFileMD5(info.absolutePath);
+            std::string partialMd5 = getFileMD5(info.absolutePath);
             strcpy(rq.md5, partialMd5.c_str());
             SendData((char*)&rq,sizeof(rq));
         }
@@ -1452,7 +1452,7 @@ void Ckernel::InitDatabase(int id)
         m_sql->ConnectSql(path);
         //测试 读取数据
 //QString sqlbuf="select count(*) from t_upload;";//QStringList lst;//m_sql->SelectSql(sqlbuf,1,lst);//qDebug()<<"upload item count:"<<lst.front();//lst.clear();
-//sqlbuf="select count(*) from t_download;";//m_sql->SelectSql(sqlbuf,1,lst);//qDebug()<<"download item count:"<<lst.front();//lst.clear();        QList<FileInfo> uploadTaskList;
+        QList<FileInfo> uploadTaskList;
         QList<FileInfo> downloadTaskList;
 
         slot_getUploadTask(uploadTaskList);
@@ -1479,7 +1479,7 @@ void Ckernel::InitDatabase(int id)
             info.isPause=1;
             //进行到多少 可以知道 因为是本地文件（通过文件信息 ）
             info.pos=fi.size();
-            //程序在收尾前被关掉/崩溃，SQLite 里的任务记录没删掉）。            //每次重新登录都会被加载到下载列表并立刻跳到 100% 变成“已完成”，            //用户在“已完成”里删掉它，重新登录后又会复活。            if(fi.size() >= (qint64)info.size){
+            if(fi.size() >= (qint64)info.size){
                 slot_deleteDownloadTask(info);
                 m_mainDialog->slot_insertDownloadComplete(info);
                 continue;
@@ -1501,10 +1501,10 @@ void Ckernel::InitDatabase(int id)
         sqlbuf="create table t_download(timestamp int,f_id int,f_name varchar(260),f_dir varchar(260),f_time varchar(60),f_size int,f_md5 varchar(60),f_type varchar(60),f_absolutePath varchar(260));";
         m_sql->UpdateSql(sqlbuf);
     }
-    //分片上传进度表：新旧数据库都确保存在，记录每条连接已发送字节数    m_sql->UpdateSql("CREATE TABLE IF NOT EXISTS t_upload_chunk_progress("
+    m_sql->UpdateSql("CREATE TABLE IF NOT EXISTS t_upload_chunk_progress("
                      "timestamp INTEGER, seg_index INTEGER, seg_offset INTEGER,"
                      "seg_size INTEGER, sent INTEGER, PRIMARY KEY(timestamp, seg_index));");
-    //确保已获取分享表存在（新老数据库通用）    m_sql->UpdateSql("CREATE TABLE IF NOT EXISTS t_obtained_shares("
+    m_sql->UpdateSql("CREATE TABLE IF NOT EXISTS t_obtained_shares("
                      "share_code INTEGER PRIMARY KEY,"
                      "password TEXT,"
                      "root_name TEXT,"
@@ -1532,7 +1532,7 @@ void Ckernel::slot_deleteUploadTask(FileInfo &info)
 void Ckernel::slot_deleteDownloadTask(FileInfo &info)
 {
     //原来删除条件是 timestamp+绝对路径：绝对路径里含单引号时
-    //SQL 会失败，任务记录删不掉 -> 重新登录后又被加载出来（“已完成”记录复活）。    //timestamp 是任务的唯一标识，按 timestamp 删除即可。    QString sqlbuf=QString("delete from t_download where timestamp=%1;").arg(info.timestamp);
+    QString sqlbuf=QString("delete from t_download where timestamp=%1;").arg(info.timestamp);
     m_sql->UpdateSql(sqlbuf);
 }
 
@@ -1601,7 +1601,7 @@ void Ckernel::clearChunkProgress(int timestamp)
     m_sql->UpdateSql(QString("DELETE FROM t_upload_chunk_progress WHERE timestamp=%1;").arg(timestamp));
 }
 
-//======== 连接池：超大文件分片并行传输 ========void Ckernel::initTcpClientPool()
+void Ckernel::initTcpClientPool()
 {
     if(m_tcpClientPool) return;
     m_tcpClientPool.reset(new TcpClientPool(POOL_CONNECTIONS));
@@ -1610,7 +1610,7 @@ void Ckernel::clearChunkProgress(int timestamp)
         m_tcpClientPool.reset();
         return;
     }
-    //绑定每条连接到用户会话 + 连接信号    for(int i=0; i<POOL_CONNECTIONS; ++i){
+    for(int i=0; i<POOL_CONNECTIONS; ++i){
         bindPoolConnection(i);
         TcpClientMediator* conn = m_tcpClientPool->connection(i);
         if(conn){
@@ -1702,7 +1702,7 @@ void Ckernel::slot_uploadFileChunked(FileInfo& info)
 
 void Ckernel::slot_downloadFileChunked(int fileid, QString dir)
 {
-    //向服务器请求分片下载（服务器通过各池连接独立发送文件头+内容块）    STRU_DOWNLOAD_FILE_RQ rq;
+    STRU_DOWNLOAD_FILE_RQ rq;
     std::string strDir = dir.toStdString();
     strcpy(rq.dir, strDir.c_str());
     rq.fileid = fileid;
@@ -1781,7 +1781,7 @@ void Ckernel::slot_getRecycle()
 void Ckernel::slot_restoreFile(QVector<int> fileidArray)
 {
     qDebug()<<__func__;
-    //发送恢复请求（UI刷新由服务端回复驱动）    int packlen = sizeof(STRU_RESTORE_FILE_RQ) + fileidArray.size() * sizeof(int);
+    int packlen = sizeof(STRU_RESTORE_FILE_RQ) + fileidArray.size() * sizeof(int);
     STRU_RESTORE_FILE_RQ* rq = (STRU_RESTORE_FILE_RQ*)malloc(packlen);
     rq->init();
     rq->fileCount = fileidArray.size();
@@ -1795,7 +1795,7 @@ void Ckernel::slot_restoreFile(QVector<int> fileidArray)
 void Ckernel::slot_deleteForever(QVector<int> fileidArray)
 {
     qDebug()<<__func__;
-    //改用专用的"彻底删除"协议发送请求：    int packlen = sizeof(STRU_DELETE_FOREVER_RQ) + fileidArray.size() * sizeof(int);
+    int packlen = sizeof(STRU_DELETE_FOREVER_RQ) + fileidArray.size() * sizeof(int);
     STRU_DELETE_FOREVER_RQ* rq = (STRU_DELETE_FOREVER_RQ*)malloc(packlen);
     rq->init();
     rq->fileCount = fileidArray.size();
@@ -1878,7 +1878,7 @@ void Ckernel::slot_clearUploadTasks()
 
 void Ckernel::processUploadQueue()
 {
-    //允许最多3个文件并发上传，提高吞吐量    //去掉200ms延迟，立即处理队列    while (m_activeUploads < 3 && !m_uploadQueue.isEmpty()) {
+    while (m_activeUploads < 3 && !m_uploadQueue.isEmpty()) {
         UploadTask task = m_uploadQueue.dequeue();
         qDebug() << "processUploadQueue: starting" << task.path;
         slot_uploadFile(task.path, task.dir);
@@ -1915,7 +1915,7 @@ void Ckernel::slot_dealBrowseShareRs(unsigned int lSendIp, char* buf, int nlen)
 
 void Ckernel::slot_dealDeleteForeverRs(unsigned int lSendIp, char* buf, int nlen)
 {
-    //新增：彻底删除回复处理，成功或失败都刷新回收站列表    STRU_DELETE_FOREVER_RS* rs = (STRU_DELETE_FOREVER_RS*)buf;
+    STRU_DELETE_FOREVER_RS* rs = (STRU_DELETE_FOREVER_RS*)buf;
     if (rs->result == 1) {
         slot_getRecycle();
     } else {

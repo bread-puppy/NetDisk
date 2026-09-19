@@ -4,7 +4,8 @@
 
 class TcpClientMediator :public INetMediator
 {
-//Q_OBJECTpublic:
+//Q_OBJECT
+public:
     TcpClientMediator(void);
     ~TcpClientMediator(void);
 

@@ -48,17 +48,23 @@ double synchronize_video(VideoState *is, AVFrame *src_frame, double pts) {
     double frame_delay; // 缓存帧和帧之间的延迟
     if (pts != 0) {
         /* if we have pts, set video clock to it */
-        //如果当前帧有 PTS 时间戳，那么使用它来更新视频时钟        is->video_clock = pts;
+        //如果当前帧有 PTS 时间戳，那么使用它来更新视频时钟
+        is->video_clock = pts;
     } else {
         /* if we aren't given a pts, set it to the clock */
-        //如果没有 PTS 时间戳，则采用视频时钟作为当前时间        pts = is->video_clock;
+        //如果没有 PTS 时间戳，则采用视频时钟作为当前时间
+        pts = is->video_clock;
     }
     /* update the video clock */
-    //计算当前帧和上一帧之间的时钟差    frame_delay = av_q2d(is->video_st->codec->time_base);
+    //计算当前帧和上一帧之间的时钟差
+    frame_delay = av_q2d(is->video_st->codec->time_base);
     /* if we are repeating a frame, adjust clock accordingly */
-    //如果当前帧是重复帧，需要根据重复数调整帧之间的时间差    frame_delay += src_frame->repeat_pict * (frame_delay * 0.5);
-    //更新视频时钟    is->video_clock += frame_delay;
-    //返回当前帧的 PTS 时间戳    return pts;
+    //如果当前帧是重复帧，需要根据重复数调整帧之间的时间差
+    frame_delay += src_frame->repeat_pict * (frame_delay * 0.5);
+    //更新视频时钟
+    is->video_clock += frame_delay;
+    //返回当前帧的 PTS 时间戳
+    return pts;
 }
 
 
@@ -113,7 +119,8 @@ int video_thread(void *arg)
                 break;
             }else
             {
-                //队列暂时没数据，短暂休眠                if(is->isPause && is->pauseMutex && is->pauseCond)
+                //队列暂时没数据，短暂休眠
+                if(is->isPause && is->pauseMutex && is->pauseCond)
                 {
                     is->pauseMutex->lock();
                     is->pauseCond->wait(is->pauseMutex, 10);
@@ -135,7 +142,9 @@ int video_thread(void *arg)
             continue;
         }
         //音频同步等待加上限：音频时钟没在前进（音频未就绪、
-        //第一帧后就永久卡在这里——表现就是一直黑屏。        //最多等约一个帧间隔(40ms)，追不上就按视频自身节拍播放。        int waitCount = 0;
+        //第一帧后就永久卡在这里——表现就是一直黑屏。
+        //最多等约一个帧间隔(40ms)，追不上就按视频自身节拍播放。
+        int waitCount = 0;
         while(1)
         {
             if(is->quit) break;
@@ -151,13 +160,17 @@ int video_thread(void *arg)
         ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture,packet);
         if (ret < 0) {
             //单个包解码失败不能直接退出视频线程：
-            //H.264 开头缺参考帧、文件尾部截断等常见情况都会返回错误，            //直接 break 会把整个播放器关掉（黑屏）。跳过坏包继续解。            av_log(NULL, AV_LOG_WARNING, "skip bad video packet\n");
+            //H.264 开头缺参考帧、文件尾部截断等常见情况都会返回错误，
+            //直接 break 会把整个播放器关掉（黑屏）。跳过坏包继续解。
+            av_log(NULL, AV_LOG_WARNING, "skip bad video packet\n");
             av_free_packet(packet);
             continue;
         }
         //获取显示时间 pts
         //帧没有PTS时(best_effort_timestamp 为 AV_NOPTS_VALUE)
-        //原算法会算出负值，video_clock 一直为负 -> 进度条不动、        //音画同步逻辑失效。没有PTS时改用帧节拍器推算当前时间。        pFrame->pts = pFrame->best_effort_timestamp;
+        //原算法会算出负值，video_clock 一直为负 -> 进度条不动、
+        //音画同步逻辑失效。没有PTS时改用帧节拍器推算当前时间。
+        pFrame->pts = pFrame->best_effort_timestamp;
         if (pFrame->best_effort_timestamp != AV_NOPTS_VALUE) {
             video_pts = (int64_t)(pFrame->best_effort_timestamp * 1000000
                                   * av_q2d(is->video_st->time_base));
@@ -185,14 +198,20 @@ int video_thread(void *arg)
                       pFrame->linesize, 0, pCodecCtx->height, pFrameRGB->data,
                       pFrameRGB->linesize);
             //把这个 RGB 数据 用 QImage 加载
-            //宽度不是 8 的倍数时 FFmpeg 会对齐行宽，QImage 默认按 width*4 算行宽            //会读错偏移，画面花屏/错位            QImage tmpImg((uchar*)out_buffer_rgb,
+            //宽度不是 8 的倍数时 FFmpeg 会对齐行宽，QImage 默认按 width*4 算行宽
+            //会读错偏移，画面花屏/错位
+            QImage tmpImg((uchar*)out_buffer_rgb,
                           pCodecCtx->width, pCodecCtx->height,
                           pFrameRGB->linesize[0], QImage::Format_RGB32);
             QImage image = tmpImg.copy(); //把图像复制一份 传递给界面显示
             is->m_player->SendGetOneImage(image); //调用激发信号的函数
 
             //墙钟节拍：按视频自身时间轴匀速播放。
-            //原先开头音频包还没进队列时（audioq->size==0）同步循环直接            //跳过，视频全速狂奔解完整个文件；之后又反过来等音频追上，            //期间画面冻结（黑屏）。frame_timer 按每帧时长累计，            //与墙钟比较后补足延迟，保证任何情况下都以正常速度出帧。            double frameDelaySec = av_q2d(is->video_st->time_base); // 一帧时长（秒）
+            //原先开头音频包还没进队列时（audioq->size==0）同步循环直接
+            //跳过，视频全速狂奔解完整个文件；之后又反过来等音频追上，
+            //期间画面冻结（黑屏）。frame_timer 按每帧时长累计，
+            //与墙钟比较后补足延迟，保证任何情况下都以正常速度出帧。
+            double frameDelaySec = av_q2d(is->video_st->time_base); // 一帧时长（秒）
             frameDelaySec += pFrame->repeat_pict * frameDelaySec * 0.5;
             is->frame_timer += frameDelaySec;
             double wallSec = (av_gettime() - is->start_time) / 1000000.0;
@@ -214,7 +233,8 @@ int video_thread(void *arg)
     is->videoThreadFinished = true;
 
 
-    //清屏    QImage img; //把图像复制一份 传递给界面显示
+    //清屏
+    QImage img; //把图像复制一份 传递给界面显示
     img.fill(Qt::black);
     is->m_player->SendGetOneImage(img); //调用激发信号的函数
 
@@ -231,7 +251,8 @@ void VideoPlayer::play()
 {
     //维护状态
     m_videoState.isPause = false;
-    //唤醒暂停等待的线程    if(m_videoState.pauseCond)
+    //唤醒暂停等待的线程
+    if(m_videoState.pauseCond)
         m_videoState.pauseCond->wakeAll();
     //标志位置位
     if( m_playerState != Pause) return;
@@ -269,7 +290,17 @@ void VideoPlayer:: run()
         Q_EMIT SIG_PlayerStateChanged(PlayerState::Stop);
     };
     //旧的测试版本
-    //QString path=QCoreApplication::applicationDirPath()+"/image/";    //qDebug()<<path;    ////循环获取图片    //for(int i=0;i<23;i++)    //{    //QString tmp=QString ("%1%2.png").arg(path).arg(i);    ////发送信号->图片    //Q_EMIT SIG_GetOneImage(QImage(tmp));    //QThread::msleep(100);    //}
+    //QString path=QCoreApplication::applicationDirPath()+"/image/";
+    //qDebug()<<path;
+    ////循环获取图片
+    //for(int i=0;i<23;i++)
+    //{
+    //QString tmp=QString ("%1%2.png").arg(path).arg(i);
+    ////发送信号->图片
+    //Q_EMIT SIG_GetOneImage(QImage(tmp));
+    //QThread::msleep(100);
+    //}
+
     //音频
     //添加音频需要的变量
     int audioStream = -1;//音频解码器需要的流的索引
@@ -283,8 +314,12 @@ void VideoPlayer:: run()
     int videoStream = -1;
     AVCodecContext *pCodecCtx ; //视频的解码器信息指针
     AVCodec *pCodec ; //视频解码器
-    //AVFrame *pFrame, *pFrameRGB;// 用来存解码后的数据    AVPacket *packet;//读取解码前的包
-    //int numBytes;//帧数据大小    //uint8_t * out_buffer;//存储转化为 RGB 格式数据的缓冲区    //struct SwsContext *img_convert_ctx;//YUV 转 RGB 的结构
+    //AVFrame *pFrame, *pFrameRGB;// 用来存解码后的数据
+    AVPacket *packet;//读取解码前的包
+    //int numBytes;//帧数据大小
+    //uint8_t * out_buffer;//存储转化为 RGB 格式数据的缓冲区
+    //struct SwsContext *img_convert_ctx;//YUV 转 RGB 的结构
+
     //1.初始化 FFMPEG 调用了这个才能正常适用编码器和解码器 注册所用函数
     av_register_all();
     //SDL 初始化
@@ -301,8 +336,10 @@ void VideoPlayer:: run()
     //2.需要分配一个 AVFormatContext，FFMPEG 所有的操作都要通过这个 AVFormatContext 来进行 可以理解为视频文件指针
     AVFormatContext *pFormatCtx = avformat_alloc_context();
     //3.打开视频文件并获取信息
-    //接着调用打开视频文件    //中文兼容：FFmpeg 在 Windows 上使用本地编码(GBK)打开文件，
-    //表现为"视频播放不了"。现改用 QFile::encodeName 转成本地编码。    QByteArray localPath = QFile::encodeName(m_fileName);
+    //接着调用打开视频文件
+    //中文兼容：FFmpeg 在 Windows 上使用本地编码(GBK)打开文件，
+    //表现为"视频播放不了"。现改用 QFile::encodeName 转成本地编码。
+    QByteArray localPath = QFile::encodeName(m_fileName);
     const char* file_path = localPath.constData();
     //打开视频文件
     //3. 打开视频文件
@@ -325,7 +362,14 @@ void VideoPlayer:: run()
     ///这里我们现在只处理视频流 音频流先不管他
     //4.读取视频流
 
-    //int i;    //for ( i = 0; i < pFormatCtx->nb_streams; i++) {    //if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)    //{    //videoStream = i;    //}    //}
+    //int i;
+    //for ( i = 0; i < pFormatCtx->nb_streams; i++) {
+    //if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+    //{
+    //videoStream = i;
+    //}
+    //}
+
     //查找音频视频流索引
     if (find_stream_index(pFormatCtx, &videoStream, &audioStream) == -1)
     {
@@ -442,12 +486,15 @@ void VideoPlayer:: run()
         packet_queue_init(m_videoState.audioq);
         m_videoState.audioFrame = av_frame_alloc();
 
-        //SDL 播放声音 0 播放        SDL_PauseAudioDevice(m_videoState.audioID,0);
+        //SDL 播放声音 0 播放
+        SDL_PauseAudioDevice(m_videoState.audioID,0);
         }
     }
 
     Q_EMIT SIG_TotalTime(getTotalTime());
-    //int64_t start_time = av_gettime();    //int64_t pts = 0; //当前视频帧的 pts    //8.循环读取视频
+    //int64_t start_time = av_gettime();
+    //int64_t pts = 0; //当前视频帧的 pts
+    //8.循环读取视频
     //8.循环读取视频帧, 转换为 RGB 格式, 抛出信号去控件显示
     int ret, got_picture;
     int DelayCount=0;
@@ -469,7 +516,9 @@ void VideoPlayer:: run()
         }
         //跳转
         if( m_videoState.seek_req )
-            //跳转标志位seek_req --> 1 清除队列里的缓存 3s --> 3min 3s里面的数据 存在 队列和解码器            //3s在解码器里面的数据和3min的会合在一起 引起花屏 --> 解决方案 清理解码器缓存 AV_flush_...            //什么时候清理 -->要告诉它 , 所以要来标志包 FLUSH_DATA "FLUSH"
+            //跳转标志位seek_req --> 1 清除队列里的缓存 3s --> 3min 3s里面的数据 存在 队列和解码器
+            //3s在解码器里面的数据和3min的会合在一起 引起花屏 --> 解决方案 清理解码器缓存 AV_flush_...
+            //什么时候清理 -->要告诉它 , 所以要来标志包 FLUSH_DATA "FLUSH"
             //关键帧--比如10秒 --> 15秒 跳转关键帧 只能是10 或15 , 如果你要跳到13 , 做法是跳到
             //10 然后10-13的包全扔掉
         {
@@ -513,7 +562,12 @@ void VideoPlayer:: run()
             m_videoState.seek_flag_video = 1;
         }
         //可以看出 av_read_frame 读取的是一帧视频，并存入一个 AVPacket 的结构中
-        //if (av_read_frame(pFormatCtx, packet) < 0)        //{        //if( m_videoState.quit ) break;        //break; //这里认为视频读取完了        //}        //读取数据包时,发现返回<0, 并不需要马上退出, 可以做一下延迟
+        //if (av_read_frame(pFormatCtx, packet) < 0)
+        //{
+        //if( m_videoState.quit ) break;
+        //break; //这里认为视频读取完了
+        //}
+        //读取数据包时,发现返回<0, 并不需要马上退出, 可以做一下延迟
         if (av_read_frame(pFormatCtx, packet) < 0)
         {
             DelayCount++;
@@ -591,8 +645,11 @@ void VideoPlayer:: run()
     //视频自动结束 置标志位
     m_playerState = PlayerState::Stop;
     //播放结束（自然播完或点击停止）时通知界面复位：
-    //暂停/继续按钮状态错误，点击停止后也看不到任何"已停止"反馈。    //复位后可通过再次双击网盘中的视频或播放器里的"打开文件"重新播放。    Q_EMIT SIG_PlayerStateChanged(PlayerState::Stop);
-    //回收条件变量    delete m_videoState.pauseCond;
+    //暂停/继续按钮状态错误，点击停止后也看不到任何"已停止"反馈。
+    //复位后可通过再次双击网盘中的视频或播放器里的"打开文件"重新播放。
+    Q_EMIT SIG_PlayerStateChanged(PlayerState::Stop);
+    //回收条件变量
+    delete m_videoState.pauseCond;
     m_videoState.pauseCond = nullptr;
     delete m_videoState.pauseMutex;
     m_videoState.pauseMutex = nullptr;
@@ -614,12 +671,16 @@ PlayerState VideoPlayer::playerstate() const
 //13.回调函数中将从队列中取数据, 解码后填充到播放缓冲区.
 void audio_callback(void *userdata, Uint8 *stream, int len)
 {
-    //AVCodecContext *pcodec_ctx = (AVCodecContext *) userdata;    VideoState * is = (VideoState *) userdata;
+    //AVCodecContext *pcodec_ctx = (AVCodecContext *) userdata;
+    VideoState * is = (VideoState *) userdata;
     int len1, audio_data_size;
 
     memset( stream , 0 , len);
     if(is->isPause ) return;
-    //static uint8_t audio_buf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];    //static unsigned int audio_buf_size = 0;    //static unsigned int audio_buf_index = 0;    /* len 是由 SDL 传入的 SDL 缓冲区的大小，如果这个缓冲未满，我们就一直往里填充数据 */
+    //static uint8_t audio_buf[(AVCODEC_MAX_AUDIO_FRAME_SIZE * 3) / 2];
+    //static unsigned int audio_buf_size = 0;
+    //static unsigned int audio_buf_index = 0;
+    /* len 是由 SDL 传入的 SDL 缓冲区的大小，如果这个缓冲未满，我们就一直往里填充数据 */
     /* audio_buf_index 和 audio_buf_size 标示我们自己用来放置解码出来的数据的缓冲区，*/
     /* 这些数据待 copy 到 SDL 缓冲区， 当 audio_buf_index >= audio_buf_size 的时候意味着我*/
     /* 们的缓冲为空，没有数据可供 copy，这时候需要调用 audio_decode_frame 来解码出更
@@ -819,7 +880,8 @@ int64_t VideoPlayer::getTotalTime()
 {
     if( m_videoState.pFormatCtx ){
         //部分文件容器没有总时长（duration 为 -1），
-        //此时用视频流自身的时长估算总时长。        if (m_videoState.pFormatCtx->duration > 0)
+        //此时用视频流自身的时长估算总时长。
+        if (m_videoState.pFormatCtx->duration > 0)
             return m_videoState.pFormatCtx->duration;
         if (m_videoState.videoStream >= 0) {
             AVStream* st = m_videoState.pFormatCtx->streams[m_videoState.videoStream];

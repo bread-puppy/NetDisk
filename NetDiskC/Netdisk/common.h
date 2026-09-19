@@ -26,7 +26,8 @@ struct FileInfo
 
     //文件指针（传统 FILE* 读写，作为 mmap 失败时的回退方案）
     FILE* pFile;
-    //mmap 内存映射（优先使用，零拷贝 I/O）    QSharedPointer<QFile> qFile;
+    //mmap 内存映射（优先使用，零拷贝 I/O）
+    QSharedPointer<QFile> qFile;
     uchar* mappedData;
     bool useMmap;
     //字节单位换算

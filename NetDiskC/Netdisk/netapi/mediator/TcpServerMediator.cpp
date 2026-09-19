@@ -38,6 +38,7 @@ void TcpServerMediator::DealData(unsigned int lSendIP , char* buf , int nlen )
 {
     //将这几个参数 以信号的形式发送出去  -- IKernel类 的槽函数处理 -- 注意空间回收
 
-//std::cout<< lSendIP << ":" << buf <<std::endl;
+//std::cout<< lSendIP << ":" << buf <<std::endl;
+
     Q_EMIT SIG_ReadyData( lSendIP , buf , nlen);
 }
